@@ -6,7 +6,7 @@
 
 ## SCENARIO 1: BILLING RECONCILIATION
 
-### Slide 4: The Problem Statement
+### Slide 11: The Problem Statement
 **Use:** Scenario 1 Visual 1 - The Billing Dispute (Executive Summary)
 - **What it shows:** Side-by-side comparison of customer expectation vs actual invoice
 - **Key message:** Customer is correct - 15.4% overbilling confirmed
@@ -15,7 +15,7 @@
 
 ---
 
-### Slide 5: Monthly Billing Breakdown
+### Slide 12: Monthly Billing Breakdown
 **Use:** Scenario 1 Visual 2 - Monthly Billing Trend
 - **What it shows:** Stacked bars showing expected (blue) vs overbilled (red) samples each month
 - **Key message:** Overbilling is consistent across all months, not just August
@@ -24,7 +24,7 @@
 
 ---
 
-### Slide 6: Sample Type Breakdown
+### Slide 13: Sample Type Breakdown
 **Use:** Scenario 1 Visual 3 - Sample Type Breakdown
 - **What it shows:** Horizontal bars showing blood, saliva, bone marrow, and other samples
 - **Key message:** Bone marrow is the main source of overbilling
@@ -33,7 +33,7 @@
 
 ---
 
-### Slide 7: Root Cause Analysis
+### Slide 14: Root Cause Analysis
 **Use:** Scenario 1 Visual 4 - Root Cause Analysis
 - **What it shows:** Top workflows that are billing bone marrow samples
 - **Key message:** These specific workflows need to be fixed
@@ -44,7 +44,7 @@
 
 ## SCENARIO 2: CUSTOMER HEALTH
 
-### Slide 9: Customer Usage Trend
+### Slide 16: Customer Usage Trend
 **Use:** Scenario 2 Visual 1 - Customer Usage Trend Over Time
 - **What it shows:** Line chart with trend showing monthly billable samples, highlighting August drop
 - **Key message:** Overall growth of 62.5%, but August shows significant decline
@@ -53,7 +53,7 @@
 
 ---
 
-### Slide 10: Month-over-Month Growth Analysis
+### Slide 17: Month-over-Month Growth Analysis
 **Use:** Scenario 2 Visual 2 - Month-over-Month Growth Rate
 - **What it shows:** Bar chart showing growth/decline percentages per month (color-coded)
 - **Key message:** August drop (-18.8%) exceeds risk threshold (-15%)
@@ -62,7 +62,7 @@
 
 ---
 
-### Slide 11: Production Run Success Rate
+### Slide 18: Production Run Success Rate
 **Use:** Scenario 2 Visual 3 - Production Run Success Rate
 - **What it shows:** Line chart showing success rate over time with target thresholds
 - **Key message:** Service quality is good (high success rates), not causing decline
@@ -71,7 +71,7 @@
 
 ---
 
-### Slide 12: Customer Health Summary
+### Slide 19: Customer Health Summary
 **Use:** Scenario 2 Visual 4 - Customer Health Summary
 - **What it shows:** Summary dashboard with 6 key metrics and overall health status
 - **Key message:** Health score: AT RISK - requires attention but overall trend positive

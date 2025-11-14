@@ -13,36 +13,263 @@
 
 ---
 
-## SLIDE 2: Executive Summary
+## SLIDE 2: Data Overview
+
+**What Data Are We Working With?**
+
+**Source:** `data-analyst-technical-task-data.xlsx` (Excel workbook)
+
+**Three Primary Datasets:**
+
+1. **QC Checks Table**
+   - **6,405 rows, 8 columns**
+   - Contains: Sample-level quality control checks
+   - Key fields: `RUN_ID`, `WORKFLOW_ID`, `TIMESTAMP`, `SAMPLE_TYPE`, `QC_CHECK`
+   - Purpose: Track quality status of each sample processed
+
+2. **Workflows Table**
+   - **264 rows, 4 columns**
+   - Contains: Workflow definitions and metadata
+   - Key fields: `WORKFLOW_ID`, `WORKFLOW_NAME`, `WORKFLOW_TYPE`, `WORKFLOW_TIMESTAMP`
+   - Purpose: Define different processing workflows available in the system
+
+3. **Runs Table**
+   - **1,693 rows, 8 columns**
+   - Contains: Execution records of workflows
+   - Key fields: `ID`, `WORKFLOW_ID`, `WORKFLOW_NAME`, `OUTCOME`, `START_TIME`, `STOP_TIME`
+   - Purpose: Track when workflows were executed and their results
+
+**Time Period:** May 2025 - August 2025 (4 months of data)
+
+---
+
+## SLIDE 3: Data Organization & Structure
+
+**How We Organized the Data:**
+
+**1. Data Loading:**
+- Loaded all three tables from Excel workbook
+- Preserved all original columns and data types
+- Maintained referential integrity between tables
+
+**2. Data Relationships:**
+```
+QC Checks ←─[WORKFLOW_ID]──→ Workflows
+    ↓                          ↑
+    └─[RUN_ID]──→ Runs ─[WORKFLOW_ID]─┘
+```
+
+**3. Key Merges Performed:**
+- QC Checks + Workflows: Enriched sample data with workflow metadata
+- QC Checks + Runs: Linked samples to execution outcomes
+- Final dataset: All tables joined to create comprehensive view
+
+**4. Data Enrichment:**
+- Added `ENVIRONMENT` column: Extracted from workflow name prefixes (e.g., [LIVE], [TEST])
+- Added `YEAR_MONTH` column: Period-based grouping for time series analysis
+- Derived fields: Calculated metrics like month-over-month change, overbilling percentages
+
+---
+
+## SLIDE 4: Data Cleaning & Transformation
+
+**What Cleaning Was Done:**
+
+**1. Date/Time Standardization:**
+- Converted all timestamp columns to pandas datetime objects
+- Standardized date formats across all tables
+- Enabled time-based filtering and grouping
+
+**2. Environment Classification:**
+- **Challenge:** Environment not explicitly stored, but encoded in workflow names
+- **Solution:** Created `infer_environment()` function using regex and keyword matching
+- **Logic:** Extracts prefix from workflow name (e.g., `[LIVE] workflow-name`)
+- **Environments Identified:**
+  - LIVE (production)
+  - TEST
+  - UAT
+  - EXPERIMENTAL
+  - ARCHIVED
+  - UNLABELED (no clear environment marker)
+
+**3. Data Quality Checks:**
+- Handled missing values in `SAMPLE_TYPE` and `QC_CHECK` fields
+- Validated workflow ID consistency across tables
+- Checked for duplicate records
+
+**4. Filtering & Subsetting:**
+- Applied environment filters for production analysis
+- Filtered by run outcomes (finished, failed, canceled)
+- Applied QC check status filters
+
+**No data was modified or imputed - all analysis uses original values**
+
+---
+
+## SLIDE 5: Methodology & Key Assumptions (Overall)
+
+**Core Analytical Approach:**
+
+**1. Definition of "Production" / "Billable":**
+- **Production Environment:** Only workflows marked as `[LIVE]`
+- **Rationale:** Customer only processes blood/saliva samples in production
+- **Data Impact:** Excluded TEST, UAT, EXPERIMENTAL environments from billing analysis
+
+**2. Definition of "Billable Samples":**
+A sample is considered billable if **ALL** of the following are true:
+- ✅ Sample is in a `[LIVE]` workflow
+- ✅ Sample is from a run with `OUTCOME = "finished"`
+- ✅ Sample has `QC_CHECK = "pass"` OR `QC_CHECK` is missing/NaN
+
+**Assumption:** Missing QC checks are treated as passed (common practice if QC not required)
+
+**3. Sample Type Classification:**
+- **Expected (Billable):** `blood`, `saliva`
+- **Overbilled (Non-Billable):** `bone marrow`, `null/NaN`, any other type
+- **Rationale:** Based on customer's stated contract terms
+
+**4. Time Period Analysis:**
+- All analysis uses monthly aggregation (`YEAR_MONTH` period)
+- Month-over-month comparisons using percentage change
+- Trend analysis using 3-month moving averages
+
+---
+
+## SLIDE 6: Methodology - Scenario 1 Specific
+
+**Billing Reconciliation Approach:**
+
+**1. Production Focus:**
+- **Filter Applied:** `ENVIRONMENT == "live"` only
+- **Rationale:** Customer dispute specifically mentions "production workloads"
+- **Data Impact:** Reduced from 6,405 total samples to 3,608 billable live samples
+
+**2. Run Outcome Filtering:**
+- **Included:** Only samples from runs where `OUTCOME = "finished"`
+- **Excluded:** Failed runs, canceled runs
+- **Rationale:** Only successfully completed runs should be billed
+- **Data Impact:** From 4,057 samples in live runs → 3,608 billable samples
+
+**3. QC Status Handling:**
+- **Included:** Samples with `QC_CHECK = "pass"` OR `QC_CHECK = NaN`
+- **Assumption:** Missing QC results indicate samples passed default checks
+- **Rationale:** Not all samples may require explicit QC checks
+
+**4. Overbilling Calculation:**
+```
+Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
+```
+- Calculated both all-time and monthly
+- Monthly view allows comparison across billing periods
+
+**5. Root Cause Analysis:**
+- Grouped overbilled samples by `WORKFLOW_NAME`
+- Identified top workflows contributing to bone marrow billing
+- Focused on workflows with highest volume of incorrectly billed samples
+
+---
+
+## SLIDE 7: Methodology - Scenario 2 Specific
+
+**Customer Health Assessment Approach:**
+
+**1. Reuses Scenario 1 Definition:**
+- **Base Dataset:** `billable_live` from Scenario 1
+- **Rationale:** Customer health should measure actual production usage
+- **Consistency:** Same definition ensures comparability
+
+**2. Usage Metrics Calculated:**
+- **Billable Samples:** Count of billable samples per month
+- **Unique Runs:** Number of distinct production runs per month
+- **Month-over-Month (MoM) Change:** Percentage change in billable samples
+
+**3. Risk Thresholds:**
+- **>15% Drop:** Flags as significant risk indicator
+- **Rationale:** Industry standard for churn risk detection
+- **Action:** Triggers proactive customer engagement
+
+**4. Trend Analysis:**
+- **3-Month Moving Average:** Compares last 3 months vs previous 3 months
+- **Purpose:** Smooth out single-month volatility
+- **Interpretation:** Negative trend indicates potential churn risk
+
+**5. Success Rate Analysis:**
+- Calculated separately for Scenario 2 Visual 3
+- Formula: `(Finished Runs / Total Runs) × 100`
+- Thresholds: 90% target, 80% warning level
+- **Purpose:** Assess operational quality separately from usage trends
+
+**6. Health Score Calculation:**
+- Composite score based on multiple factors:
+  - Recent month-over-month change (-40 points if <-15%)
+  - Success rate (-30 points if <80%)
+  - 3-month trend (-30 points if declining >10%)
+- Scale: 0-100 (100 = healthy, <50 = at risk)
+
+---
+
+## SLIDE 8: Data Limitations & Considerations
+
+**What We Know:**
+
+✅ **Complete Coverage:** All production (LIVE) workflows included
+✅ **Time Period:** 4 months of data (May-August 2025)
+✅ **Data Quality:** No missing critical fields in production data
+✅ **Environment Classification:** Accurately identified production vs non-production
+
+**What We Don't Know:**
+
+⚠️ **Historical Context:** No data before May 2025 (can't assess longer-term trends)
+⚠️ **Seasonal Patterns:** Limited to 4 months (insufficient for seasonality analysis)
+⚠️ **Customer Intent:** Can't determine if August decline is intentional or concerning
+⚠️ **Workflow Purpose:** Unclear why bone marrow samples are in LIVE workflows
+⚠️ **Contract Terms:** Assumed blood/saliva only based on customer claim (not verified)
+
+**Assumptions Made:**
+1. Missing QC checks = passed (common industry practice)
+2. Customer contract allows only blood/saliva in production (based on dispute)
+3. 15% MoM decline = risk threshold (industry standard)
+4. Workflow naming convention is consistent (environment prefixes reliable)
+
+---
+
+## SLIDE 9: Executive Summary
 
 **Key Findings:**
 
 1. **Scenario 1 - Billing Dispute:**
    - Customer correctly identified 15.4% overbilling in latest month
    - Root cause: Bone marrow samples incorrectly included in production billing
+   - Issue is systemic across all months (10-18% overbilling)
 
 2. **Scenario 2 - Customer Health:**
    - Strong overall growth trend (62.5% from May to August)
    - Single month decline (18.8% in August) - monitor closely
    - Customer health status: AT RISK (requires attention)
+   - Service quality remains high (success rate >90%)
 
 **Visual:** Use Scenario 1 Visual 1 (Billing Dispute comparison)
 
 ---
 
-## SLIDE 3: Agenda
+## SLIDE 10: Agenda
 
-1. **Scenario 1: Billing Reconciliation**
+1. **Data & Methodology Overview** ✅ (Just completed)
+   - Data structure and organization
+   - Cleaning and transformation steps
+   - Analytical assumptions
+
+2. **Scenario 1: Billing Reconciliation**
    - Investigation of customer dispute
    - Root cause analysis
    - Recommendations
 
-2. **Scenario 2: Customer Health Assessment**
+3. **Scenario 2: Customer Health Assessment**
    - Usage trend analysis
    - Risk indicators
    - Health scorecard
 
-3. **Conclusions & Next Steps**
+4. **Conclusions & Next Steps**
 
 ---
 
@@ -50,7 +277,7 @@
 
 ---
 
-## SLIDE 4: The Problem Statement
+## SLIDE 11: The Problem Statement
 
 **Customer Dispute:**
 
@@ -67,7 +294,7 @@
 
 ---
 
-## SLIDE 5: Monthly Billing Breakdown
+## SLIDE 12: Monthly Billing Breakdown
 
 **What the Data Shows:**
 
@@ -84,7 +311,7 @@
 
 ---
 
-## SLIDE 6: Sample Type Breakdown
+## SLIDE 13: Sample Type Breakdown
 
 **What Types Are Being Billed?**
 
@@ -105,7 +332,7 @@
 
 ---
 
-## SLIDE 7: Root Cause Analysis
+## SLIDE 14: Root Cause Analysis
 
 **Where Are These Non-Billable Samples Coming From?**
 
@@ -123,7 +350,7 @@
 
 ---
 
-## SLIDE 8: Scenario 1 - Recommendations
+## SLIDE 15: Scenario 1 - Recommendations
 
 **Immediate Actions:**
 
@@ -151,7 +378,7 @@
 
 ---
 
-## SLIDE 9: Customer Usage Trend
+## SLIDE 16: Customer Usage Trend
 
 **The Big Picture:**
 
@@ -169,7 +396,7 @@
 
 ---
 
-## SLIDE 10: Month-over-Month Growth Analysis
+## SLIDE 17: Month-over-Month Growth Analysis
 
 **Understanding the Volatility:**
 
@@ -187,7 +414,7 @@
 
 ---
 
-## SLIDE 11: Production Run Success Rate
+## SLIDE 18: Production Run Success Rate
 
 **Operational Quality Assessment:**
 
@@ -205,7 +432,7 @@
 
 ---
 
-## SLIDE 12: Customer Health Summary
+## SLIDE 19: Customer Health Summary
 
 **Overall Health Assessment:**
 
@@ -224,7 +451,7 @@
 
 ---
 
-## SLIDE 13: Scenario 2 - Risk Assessment
+## SLIDE 20: Scenario 2 - Risk Assessment
 
 **Why "AT RISK"?**
 
@@ -244,7 +471,7 @@
 
 ---
 
-## SLIDE 14: Scenario 2 - Recommendations
+## SLIDE 21: Scenario 2 - Recommendations
 
 **Immediate Actions:**
 
@@ -274,7 +501,7 @@
 
 ---
 
-## SLIDE 15: Key Takeaways
+## SLIDE 22: Key Takeaways
 
 **Scenario 1 - Billing Reconciliation:**
 
@@ -292,7 +519,7 @@
 
 ---
 
-## SLIDE 16: Action Items
+## SLIDE 23: Action Items
 
 **Priority 1 - Immediate (This Week):**
 
@@ -316,7 +543,7 @@
 
 ---
 
-## SLIDE 17: Questions & Discussion
+## SLIDE 24: Questions & Discussion
 
 **Key Questions for Discussion:**
 
@@ -330,7 +557,7 @@
 
 ---
 
-## SLIDE 18: Thank You
+## SLIDE 25: Thank You
 
 **Thank You for Your Time**
 
@@ -360,15 +587,16 @@
 9. Conclude with actionable next steps
 
 ### Visual Placement Guide:
-- **Scenario 1 Visual 1:** Slide 4 (The Problem)
-- **Scenario 1 Visual 2:** Slide 5 (Monthly Breakdown)
-- **Scenario 1 Visual 3:** Slide 6 (Sample Types)
-- **Scenario 1 Visual 4:** Slide 7 (Root Cause)
+- **Data Overview:** Slides 2-8 (No visuals, data tables/diagrams can be added)
+- **Scenario 1 Visual 1:** Slide 11 (The Problem)
+- **Scenario 1 Visual 2:** Slide 12 (Monthly Breakdown)
+- **Scenario 1 Visual 3:** Slide 13 (Sample Types)
+- **Scenario 1 Visual 4:** Slide 14 (Root Cause)
 
-- **Scenario 2 Visual 1:** Slide 9 (Usage Trend)
-- **Scenario 2 Visual 2:** Slide 10 (Growth Analysis)
-- **Scenario 2 Visual 3:** Slide 11 (Success Rate)
-- **Scenario 2 Visual 4:** Slide 12 (Health Summary)
+- **Scenario 2 Visual 1:** Slide 16 (Usage Trend)
+- **Scenario 2 Visual 2:** Slide 17 (Growth Analysis)
+- **Scenario 2 Visual 3:** Slide 18 (Success Rate)
+- **Scenario 2 Visual 4:** Slide 19 (Health Summary)
 
 ### Presentation Tips:
 1. Each visual should fill most of the slide
@@ -378,9 +606,10 @@
 5. Practice transitions between scenarios
 
 ### Estimated Presentation Time:
-- Total: 15-20 minutes
-- Scenario 1: 6-8 minutes
-- Scenario 2: 6-8 minutes
-- Conclusions: 2-3 minutes
+- Total: 20-25 minutes
+- Data & Methodology Overview: 3-4 minutes (Slides 2-8)
+- Scenario 1: 6-8 minutes (Slides 11-15)
+- Scenario 2: 6-8 minutes (Slides 16-21)
+- Conclusions: 2-3 minutes (Slides 22-23)
 - Q&A: 5-10 minutes
 
