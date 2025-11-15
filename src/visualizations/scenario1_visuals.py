@@ -46,18 +46,18 @@ def visual1_billing_dispute(monthly, billable_live):
     
     # Value labels on bars - clear white text
     ax.text(0, expected_val/2, f"{int(expected_val):,}\nsamples",
-            ha="center", va="center", fontsize=18, weight="bold", color="white")
+            ha="center", va="center", fontsize=16, weight="bold", color="white")
     ax.text(1, actual_val/2, f"{int(actual_val):,}\nsamples",
-            ha="center", va="center", fontsize=18, weight="bold", color="white")
+            ha="center", va="center", fontsize=16, weight="bold", color="white")
     
     # Overbilling annotation - positioned clearly
     ax.annotate(f"Overbilled: +{int(other_val):,} samples\n({latest_row['OVERBILLING_PCT']:.1f}% overbilling)",
                 xy=(1, actual_val), xytext=(1.4, actual_val * 0.7),
-                ha="left", va="center", fontsize=14, weight="bold", color=COLORS["danger"],
+                ha="left", va="center", fontsize=16, weight="bold", color=COLORS["danger"],
                 bbox=dict(boxstyle="round,pad=1", facecolor="white", edgecolor=COLORS["danger"], linewidth=3),
                 arrowprops=dict(arrowstyle="->", color=COLORS["danger"], lw=3))
     
-    ax.set_ylabel("Billable Samples", fontsize=14, weight="bold", color="black")
+    ax.set_ylabel("Billable Samples", fontsize=16, weight="bold", color="black")
     ax.set_title(f"Scenario 1: {latest_month} Billing Dispute - Customer Claims 15% Overbilling",
                  fontsize=16, weight="bold", pad=20, color="black")
     ax.set_ylim(0, actual_val * 1.35)
@@ -117,20 +117,20 @@ def visual2_monthly_trend(monthly):
         
         # Total value label
         ax.text(i, total + label_offset, f"{int(total):,}", 
-                ha="center", va="bottom", fontsize=11, weight="bold", color="black", zorder=3)
+                ha="center", va="bottom", fontsize=16, weight="bold", color="black", zorder=3)
         
         # Overbilling percentage - only show if significant
         if pct > 5:
             ax.text(i, total + label_offset * 2.5, f"{pct:.1f}%", 
-                    ha="center", va="bottom", fontsize=10, weight="bold", color=COLORS["danger"], zorder=3)
+                    ha="center", va="bottom", fontsize=16, weight="bold", color=COLORS["danger"], zorder=3)
     
     ax.set_xticks(x_pos)
-    ax.set_xticklabels(monthly_plot["YEAR_MONTH_STR"], fontsize=12, weight="bold")
-    ax.set_ylabel("Billable Samples", fontsize=14, weight="bold", color="black")
-    ax.set_xlabel("Month", fontsize=14, weight="bold", color="black")
+    ax.set_xticklabels(monthly_plot["YEAR_MONTH_STR"], fontsize=16, weight="bold")
+    ax.set_ylabel("Billable Samples", fontsize=16, weight="bold", color="black")
+    ax.set_xlabel("Month", fontsize=16, weight="bold", color="black")
     ax.set_title("Scenario 1: Monthly Billing Breakdown - Expected vs Overbilled",
                  fontsize=16, weight="bold", pad=20, color="black")
-    ax.legend(loc="upper left", frameon=True, fontsize=12)
+    ax.legend(loc="upper left", frameon=True, fontsize=16)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_linewidth(2)
@@ -190,7 +190,7 @@ def visual3_sample_types(billable_live):
     
     # Set y-ticks in reverse order so highest bar appears at top
     ax.set_yticks(range(len(labels)))
-    ax.set_yticklabels(y_labels, fontsize=12, weight='bold')
+    ax.set_yticklabels(y_labels, fontsize=16, weight='bold')
     ax.invert_yaxis()  # Invert so highest values are at top
     
     # Value labels - positioned clearly
@@ -200,12 +200,12 @@ def visual3_sample_types(billable_live):
         # Label inside bar if bar is wide enough, outside otherwise
         if v > max_count * 0.15:
             ax.text(v/2, i, f"{v:,}\n({pct:.1f}%)", 
-                   ha="center", va="center", fontsize=12, weight='bold', color='white')
+                   ha="center", va="center", fontsize=16, weight='bold', color='white')
         else:
             ax.text(v + max_count * 0.03, i, f"{v:,} ({pct:.1f}%)", 
-                   va="center", fontsize=11, weight='bold', color=color)
+                   va="center", fontsize=16, weight='bold', color=color)
     
-    ax.set_xlabel("Number of Samples", fontsize=14, weight="bold", color="black")
+    ax.set_xlabel("Number of Samples", fontsize=16, weight="bold", color="black")
     ax.set_title("Scenario 1: Sample Type Breakdown - Expected vs Overbilled Types",
                  fontsize=16, weight="bold", pad=20, color="black")
     ax.set_xlim(0, max_count * 1.15)
@@ -253,16 +253,16 @@ def visual4_root_cause(billable_live):
             workflow_labels.append(name[:62] + "...")
         else:
             workflow_labels.append(name)
-    ax.set_yticklabels(workflow_labels, fontsize=11, weight='bold')
+    ax.set_yticklabels(workflow_labels, fontsize=16, weight='bold')
     
     # Add value labels - positioned clearly
     max_val = max(top_workflows.values)
     for i, v in enumerate(top_workflows.values):
         label_x = v + max_val * 0.03
         ax.text(label_x, i, f"{v:,} samples", 
-               va="center", fontsize=11, weight='bold', color=COLORS["danger"])
+               va="center", fontsize=16, weight='bold', color=COLORS["danger"])
     
-    ax.set_xlabel("Bone Marrow Samples Billed", fontsize=14, weight="bold", color="black")
+    ax.set_xlabel("Bone Marrow Samples Billed", fontsize=16, weight="bold", color="black")
     ax.set_title("Scenario 1: Root Cause Analysis - Top Live Workflows Billing Bone Marrow Samples",
                 fontsize=16, weight="bold", pad=20, color="black")
     ax.set_xlim(0, max_val * 1.18)

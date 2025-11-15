@@ -12,53 +12,54 @@ from matplotlib.patches import Rectangle
 from ..utils.config import COLORS
 
 
-def visual1_usage_trend(billable_live):
+def visual1_usage_trend(usage_live):
     """
     Visual 1: Customer Usage Trend Over Time
     
-    Shows monthly billable samples with trend line.
+    Shows monthly processing samples with trend line (all samples in LIVE runs).
     Highlights significant drops that exceed risk threshold.
     
     Why this visual:
     - Shows overall growth trajectory
     - Identifies concerning drops at a glance
     - Provides context for month-over-month changes
+    - Uses all samples (not just pass QC) to reflect actual customer usage
     """
-    billable_live_s2 = billable_live.copy()
-    billable_live_s2["YEAR_MONTH"] = billable_live_s2["TIMESTAMP"].dt.to_period("M")
+    usage_live_s2 = usage_live.copy()
+    usage_live_s2["YEAR_MONTH"] = usage_live_s2["TIMESTAMP"].dt.to_period("M")
     
     usage_monthly = (
-        billable_live_s2.groupby("YEAR_MONTH").agg(
-            BILLABLE_SAMPLES=("RUN_ID", "count"),
+        usage_live_s2.groupby("YEAR_MONTH").agg(
+            SAMPLES_PROCESSED=("RUN_ID", "count"),
             UNIQUE_RUNS=("RUN_ID", "nunique"),
         ).sort_index()
     )
-    usage_monthly["MOM_CHANGE_PCT"] = usage_monthly["BILLABLE_SAMPLES"].pct_change() * 100
+    usage_monthly["MOM_CHANGE_PCT"] = usage_monthly["SAMPLES_PROCESSED"].pct_change() * 100
     um_plot = usage_monthly.reset_index().copy()
     um_plot["YEAR_MONTH_STR"] = um_plot["YEAR_MONTH"].astype(str)
     
     fig, ax = plt.subplots(figsize=(14, 7))
     
     # Fill area under curve
-    ax.fill_between(range(len(um_plot)), 0, um_plot["BILLABLE_SAMPLES"],
+    ax.fill_between(range(len(um_plot)), 0, um_plot["SAMPLES_PROCESSED"],
                      alpha=0.3, color=COLORS["primary"])
     
     # Main line
-    ax.plot(range(len(um_plot)), um_plot["BILLABLE_SAMPLES"],
+    ax.plot(range(len(um_plot)), um_plot["SAMPLES_PROCESSED"],
             marker="o", markersize=14, linewidth=4, color=COLORS["primary"], 
-            label="Monthly billable samples", markeredgecolor='white', markeredgewidth=2)
+            label="Monthly samples processed", markeredgecolor='white', markeredgewidth=2)
     
     # Add trend line
-    z = np.polyfit(range(len(um_plot)), um_plot["BILLABLE_SAMPLES"], 1)
+    z = np.polyfit(range(len(um_plot)), um_plot["SAMPLES_PROCESSED"], 1)
     p = np.poly1d(z)
     ax.plot(range(len(um_plot)), p(range(len(um_plot))),
             linestyle="--", linewidth=3, color=COLORS["neutral"], alpha=0.6, label="Overall trend")
     
     # Highlight concerning drops and add annotations
-    label_offset = max(um_plot["BILLABLE_SAMPLES"]) * 0.08
+    label_offset = max(um_plot["SAMPLES_PROCESSED"]) * 0.08
     
     for i, (idx, row) in enumerate(um_plot.iterrows()):
-        val = row["BILLABLE_SAMPLES"]
+        val = row["SAMPLES_PROCESSED"]
         mom = row["MOM_CHANGE_PCT"]
         
         if mom < -15:
@@ -67,22 +68,22 @@ def visual1_usage_trend(billable_live):
                       edgecolor="white", linewidth=3, marker='v')
             ax.annotate(f"ALERT\n{mom:.1f}% drop",
                         xy=(i, val), xytext=(i, val + 250),
-                        ha="center", fontsize=12, weight="bold", color=COLORS["danger"],
+                        ha="center", fontsize=16, weight="bold", color=COLORS["danger"],
                         bbox=dict(boxstyle="round,pad=0.8", facecolor="white", 
                                  edgecolor=COLORS["danger"], linewidth=2.5),
                         arrowprops=dict(arrowstyle="->", color=COLORS["danger"], lw=3))
         else:
             # Show value for normal months
-            ax.text(i, val + label_offset, f"{int(val):,}", ha="center", fontsize=11, weight="bold", color="black")
+            ax.text(i, val + label_offset, f"{int(val):,}", ha="center", fontsize=16, weight="bold", color="black")
     
     ax.set_xticks(range(len(um_plot)))
-    ax.set_xticklabels(um_plot["YEAR_MONTH_STR"], fontsize=12, weight="bold")
-    ax.set_ylabel("Billable Samples", fontsize=14, weight="bold", color="black")
-    ax.set_xlabel("Month", fontsize=14, weight="bold", color="black")
-    ax.set_title("Scenario 2: Production Usage Trend - Monthly Live Billable Samples Over Time",
+    ax.set_xticklabels(um_plot["YEAR_MONTH_STR"], fontsize=16, weight="bold")
+    ax.set_ylabel("Samples Processed", fontsize=16, weight="bold", color="black")
+    ax.set_xlabel("Month", fontsize=16, weight="bold", color="black")
+    ax.set_title("Scenario 2: Production Usage Trend - Monthly Live Samples Processed Over Time",
                  fontsize=16, weight="bold", pad=20, color="black")
-    ax.legend(loc="upper left", frameon=True, fontsize=12)
-    ax.set_ylim(0, um_plot["BILLABLE_SAMPLES"].max() * 1.25)
+    ax.legend(loc="upper left", frameon=True, fontsize=16)
+    ax.set_ylim(0, um_plot["SAMPLES_PROCESSED"].max() * 1.25)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_linewidth(2)
@@ -95,7 +96,7 @@ def visual1_usage_trend(billable_live):
     plt.show()
 
 
-def visual2_mom_growth(billable_live):
+def visual2_mom_growth(usage_live):
     """
     Visual 2: Month-over-Month Growth Rate
     
@@ -106,16 +107,17 @@ def visual2_mom_growth(billable_live):
     - Makes volatility immediately visible
     - Highlights months that exceed risk thresholds
     - Complements the trend chart by showing rate of change
+    - Uses all samples (not just pass QC) to reflect actual customer usage
     """
-    billable_live_s2 = billable_live.copy()
-    billable_live_s2["YEAR_MONTH"] = billable_live_s2["TIMESTAMP"].dt.to_period("M")
+    usage_live_s2 = usage_live.copy()
+    usage_live_s2["YEAR_MONTH"] = usage_live_s2["TIMESTAMP"].dt.to_period("M")
     
     usage_monthly = (
-        billable_live_s2.groupby("YEAR_MONTH").agg(
-            BILLABLE_SAMPLES=("RUN_ID", "count"),
+        usage_live_s2.groupby("YEAR_MONTH").agg(
+            SAMPLES_PROCESSED=("RUN_ID", "count"),
         ).sort_index()
     )
-    usage_monthly["MOM_CHANGE_PCT"] = usage_monthly["BILLABLE_SAMPLES"].pct_change() * 100
+    usage_monthly["MOM_CHANGE_PCT"] = usage_monthly["SAMPLES_PROCESSED"].pct_change() * 100
     um_plot = usage_monthly.reset_index().copy()
     um_plot["YEAR_MONTH_STR"] = um_plot["YEAR_MONTH"].astype(str)
     
@@ -145,21 +147,21 @@ def visual2_mom_growth(billable_live):
     for i, v in enumerate(um_plot["MOM_CHANGE_PCT"].fillna(0)):
         if abs(v) > 2:
             y_pos = v + (8 if v > 0 else -8)
-            ax.text(i, y_pos, f"{v:.0f}%", ha="center", fontsize=12, weight="bold",
+            ax.text(i, y_pos, f"{v:.0f}%", ha="center", fontsize=16, weight="bold",
                    color=colors_bar[i])
     
     # Add threshold labels
     ax.text(len(um_plot) - 0.5, -15, "-15% Risk Threshold", ha="right", va="bottom",
-           fontsize=10, color=COLORS["danger"], weight="bold",
+           fontsize=16, color=COLORS["danger"], weight="bold",
            bbox=dict(boxstyle="round,pad=0.4", facecolor="white", alpha=0.8))
     ax.text(len(um_plot) - 0.5, 20, "+20% Strong Growth", ha="right", va="bottom",
-           fontsize=10, color=COLORS["success"], weight="bold",
+           fontsize=16, color=COLORS["success"], weight="bold",
            bbox=dict(boxstyle="round,pad=0.4", facecolor="white", alpha=0.8))
     
     ax.set_xticks(range(len(um_plot)))
-    ax.set_xticklabels(um_plot["YEAR_MONTH_STR"], fontsize=12, weight="bold")
-    ax.set_ylabel("Month-over-Month Change (%)", fontsize=14, weight="bold", color="black")
-    ax.set_xlabel("Month", fontsize=14, weight="bold", color="black")
+    ax.set_xticklabels(um_plot["YEAR_MONTH_STR"], fontsize=16, weight="bold")
+    ax.set_ylabel("Month-over-Month Change (%)", fontsize=16, weight="bold", color="black")
+    ax.set_xlabel("Month", fontsize=16, weight="bold", color="black")
     ax.set_title("Scenario 2: Month-over-Month Growth Analysis - Significant Drops vs Strong Growth",
                  fontsize=16, weight="bold", pad=20, color="black")
     ax.spines['top'].set_visible(False)
@@ -217,17 +219,17 @@ def visual3_success_rate(df_runs):
         color = COLORS["success"] if v >= 90 else COLORS["warning"] if v >= 80 else COLORS["danger"]
         y_offset = 3 if v < 95 else -3
         ax.text(i, v + y_offset, f"{v:.1f}%", 
-               ha="center", fontsize=11, weight="bold", color=color,
+               ha="center", fontsize=16, weight="bold", color=color,
                bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8, edgecolor=color, linewidth=1))
     
     ax.set_xticks(range(len(sr_plot)))
-    ax.set_xticklabels(sr_plot["YEAR_MONTH_STR"], fontsize=12, weight="bold")
-    ax.set_ylabel("Success Rate (%)", fontsize=14, weight="bold", color="black")
-    ax.set_xlabel("Month", fontsize=14, weight="bold", color="black")
+    ax.set_xticklabels(sr_plot["YEAR_MONTH_STR"], fontsize=16, weight="bold")
+    ax.set_ylabel("Success Rate (%)", fontsize=16, weight="bold", color="black")
+    ax.set_xlabel("Month", fontsize=16, weight="bold", color="black")
     ax.set_title("Scenario 2: Production Run Success Rate Trend",
                  fontsize=16, weight="bold", pad=20, color="black")
     ax.set_ylim(0, 105)
-    ax.legend(loc="lower right", frameon=True, fontsize=11)
+    ax.legend(loc="lower right", frameon=True, fontsize=16)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_linewidth(2)
@@ -240,7 +242,7 @@ def visual3_success_rate(df_runs):
     plt.show()
 
 
-def visual4_health_summary(billable_live, df_runs):
+def visual4_health_summary(usage_live, df_runs):
     """
     Visual 4: Customer Health Summary
     
@@ -251,17 +253,18 @@ def visual4_health_summary(billable_live, df_runs):
     - Single-page summary for executives
     - Combines multiple metrics into actionable insight
     - Clear visual indication of risk level
+    - Uses all samples (not just pass QC) to reflect actual customer usage
     """
     # Calculate metrics
-    billable_live_s2 = billable_live.copy()
-    billable_live_s2["YEAR_MONTH"] = billable_live_s2["TIMESTAMP"].dt.to_period("M")
+    usage_live_s2 = usage_live.copy()
+    usage_live_s2["YEAR_MONTH"] = usage_live_s2["TIMESTAMP"].dt.to_period("M")
     
     usage_monthly = (
-        billable_live_s2.groupby("YEAR_MONTH").agg(
-            BILLABLE_SAMPLES=("RUN_ID", "count"),
+        usage_live_s2.groupby("YEAR_MONTH").agg(
+            SAMPLES_PROCESSED=("RUN_ID", "count"),
         ).sort_index()
     )
-    usage_monthly["MOM_CHANGE_PCT"] = usage_monthly["BILLABLE_SAMPLES"].pct_change() * 100
+    usage_monthly["MOM_CHANGE_PCT"] = usage_monthly["SAMPLES_PROCESSED"].pct_change() * 100
     
     runs_live = df_runs[df_runs["ENVIRONMENT"] == "live"].copy()
     runs_live["YEAR_MONTH"] = runs_live["START_TIME"].dt.to_period("M")
@@ -272,16 +275,16 @@ def visual4_health_summary(billable_live, df_runs):
     success_monthly["SUCCESS_RATE"] = (success_monthly["FINISHED"] / success_monthly["TOTAL_RUNS"] * 100)
     
     # Latest metrics
-    last_month_usage = usage_monthly.iloc[-1]["BILLABLE_SAMPLES"]
+    last_month_usage = usage_monthly.iloc[-1]["SAMPLES_PROCESSED"]
     last_mom = usage_monthly.iloc[-1]["MOM_CHANGE_PCT"]
     last_success = success_monthly.iloc[-1]["SUCCESS_RATE"]
     
     # Trend analysis
-    first_month = usage_monthly.iloc[0]["BILLABLE_SAMPLES"]
+    first_month = usage_monthly.iloc[0]["SAMPLES_PROCESSED"]
     total_growth = ((last_month_usage / first_month) - 1) * 100
     
-    last_3_avg = usage_monthly["BILLABLE_SAMPLES"].tail(3).mean()
-    first_3_avg = usage_monthly["BILLABLE_SAMPLES"].head(3).mean()
+    last_3_avg = usage_monthly["SAMPLES_PROCESSED"].tail(3).mean()
+    first_3_avg = usage_monthly["SAMPLES_PROCESSED"].head(3).mean()
     trend_3m = ((last_3_avg - first_3_avg) / first_3_avg * 100) if first_3_avg > 0 else 0
     
     # Calculate health score
@@ -342,20 +345,20 @@ def visual4_health_summary(billable_live, df_runs):
         
         # Text
         ax.text(x + box_width/2, y + box_height * 0.65, value,
-               ha="center", va="center", fontsize=18, weight="bold", color=color,
+               ha="center", va="center", fontsize=16, weight="bold", color=color,
                transform=ax.transAxes)
         ax.text(x + box_width/2, y + box_height * 0.25, label,
-               ha="center", va="center", fontsize=11, weight="bold",
+               ha="center", va="center", fontsize=16, weight="bold",
                transform=ax.transAxes)
     
     # Health status
     ax.text(0.5, 0.25, f"CUSTOMER HEALTH: {status}",
-           ha="center", va="center", fontsize=24, weight="bold", color=status_color,
+           ha="center", va="center", fontsize=16, weight="bold", color=status_color,
            bbox=dict(boxstyle="round,pad=1", facecolor=status_color, alpha=0.2, 
                     edgecolor=status_color, linewidth=3),
            transform=ax.transAxes)
     
-    ax.set_title("Scenario 2: Customer Health Summary", fontsize=18, weight="bold", pad=20, color="black", transform=ax.transAxes)
+    ax.set_title("Scenario 2: Customer Health Summary", fontsize=16, weight="bold", pad=20, color="black", transform=ax.transAxes)
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     

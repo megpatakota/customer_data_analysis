@@ -334,13 +334,15 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 2. **Scenario 1: Billing Reconciliation**
    - Investigation of customer dispute
-   - Root cause analysis
-   - Recommendations
+   - Time-based pattern analysis (when are samples processed?)
+   - Root cause analysis with data-driven explanations
+   - Explaining what happened, not assigning fault
 
 3. **Scenario 2: Customer Health Assessment**
-   - Usage trend analysis
-   - Risk indicators
-   - Health scorecard
+   - Comprehensive usage trend analysis (all samples, not just pass QC)
+   - Deep trend analysis using workflow timestamps and run durations
+   - Weekly and daily pattern analysis
+   - Risk indicators and health assessment
 
 4. **Conclusions & Next Steps**
 
@@ -356,14 +358,20 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 "Customer claims 15% overbilling last month. They only process blood and saliva samples in production workloads, but the invoice includes other sample types."
 
-**Question:** Is the customer correct?
+**Key Question:** What actually happened? Who is at fault?
+
+**Investigation Approach:**
+- Analyze the data to explain WHAT happened
+- Identify WHEN different sample types are being processed
+- Understand temporal patterns to explain the situation
+- Let the data tell the story - no assumptions about fault
 
 **Visual:** Scenario 1 Visual 1 - The Billing Dispute (Executive Summary)
 
-**Key Point:** 
+**Initial Observation:** 
 - Customer expects: 883 samples (blood + saliva only)
 - We invoiced: 1,019 samples
-- **Overbilling: 15.4%** Customer is correct
+- **Difference: 15.4%** - Need to investigate patterns
 
 ---
 
@@ -391,12 +399,12 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 **Visual:** Scenario 1 Visual 3 - Sample Type Breakdown
 
 **The Numbers:**
-- **Expected Types (Billable):**
+- **Expected Types (Blood/Saliva):**
   - Blood: [X] samples
   - Saliva: [Y] samples
   - **Total Expected: [X+Y] samples**
 
-- **Overbilled Types (Non-Billable):**
+- **Other Types Found in LIVE Environment:**
   - Bone Marrow: [Z] samples (CRITICAL ISSUE)
   - Other: [W] samples
   - **Total Overbilled: [Z+W] samples**
@@ -411,39 +419,129 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 **Visual:** Scenario 1 Visual 4 - Root Cause Analysis (Top Workflows)
 
-**Findings:**
+**What the Data Shows:**
 - Multiple live workflows are processing bone marrow samples
 - Top [N] workflows account for [X]% of bone marrow samples
-- These workflows should NOT be billing bone marrow in the [LIVE] environment
+- These workflows are in the [LIVE] environment and processing bone marrow
 
-**Critical Action Required:**
-1. Review these specific workflows
-2. Understand why bone marrow samples are in production environment
-3. Fix workflow classification or sample routing logic
+**Key Finding:** Bone marrow samples ARE being processed in LIVE workflows
+- This is not a data classification error
+- The workflows themselves are in production and handling bone marrow
+- Question: Is this expected behavior or a configuration issue?
 
 ---
 
-## SLIDE 16: Scenario 1 - Recommendations
+## SLIDE 15A: Time-Based Analysis - When Are Samples Processed?
 
-**Immediate Actions:**
+**Visual:** Scenario 1 Visual 5 - Time of Day Patterns by Sample Type
 
-1. **Acknowledge the Customer:**
-   - Customer is correct - refund/credit for overbilled amount
-   - Apologize for the billing error
+**What We're Investigating:**
+- Are blood/saliva and bone marrow processed at different times of day?
+- Does timing reveal operational patterns?
+- Can we see when different sample types are being run?
 
-2. **Technical Fixes:**
-   - Review workflow classification logic
-   - Ensure bone marrow samples are excluded from [LIVE] billing
-   - Implement validation checks to prevent future occurrences
+**Why This Matters:**
+- Different processing times might indicate different use cases
+- Could reveal if bone marrow is part of routine operations or special requests
+- Helps explain the pattern with data
 
-3. **Process Improvements:**
-   - Add automated billing validation
-   - Regular reconciliation of expected vs actual sample types
-   - Monthly billing audits before invoices are sent
+---
 
-4. **Historical Review:**
-   - Calculate total overbilling across all months
-   - Prepare credit/refund for historical overbilling
+## SLIDE 15B: Day of Week Patterns
+
+**Visual:** Scenario 1 Visual 6 - Day of Week Patterns by Sample Type
+
+**What We're Investigating:**
+- Are different sample types processed on different days?
+- Does day-of-week reveal operational schedules?
+- Can we identify if bone marrow runs follow a different pattern?
+
+**Why This Matters:**
+- Different days might indicate different operational needs
+- Could show if bone marrow is part of regular workflow or special processing
+- Provides data-driven context for understanding the situation
+
+---
+
+## SLIDE 15C: Timeline of Sample Processing
+
+**Visual:** Scenario 1 Visual 7 - Sample Type Timeline Over Time
+
+**What We're Investigating:**
+- How has bone marrow processing changed over time?
+- Is it increasing or decreasing relative to blood/saliva?
+- What does the trend tell us about the situation?
+
+**Why This Matters:**
+- Shows if bone marrow processing is a recent change or ongoing pattern
+- Reveals if the issue is getting worse or staying constant
+- Provides historical context to explain what happened
+
+---
+
+## SLIDE 16: Deep Investigation - Which Workflows Process Bone Marrow?
+
+**Visual:** Scenario 1 Visual 8 - Bone Marrow Workflow Investigation
+
+**What the Data Shows:**
+- [X] workflows are processing bone marrow samples in LIVE environment
+- Top workflows processing bone marrow: [List from investigation]
+- Bone marrow processing started: [First BM Date from data]
+- These workflows are configured as [LIVE] in the system
+
+**Key Questions Arising:**
+- Are these workflows supposed to be in production?
+- Did the customer configure these workflows, or was this a system default?
+- Why do these workflows process bone marrow if customer only expects blood/saliva?
+
+**Critical Finding:**
+- This is NOT a data classification error
+- The workflows themselves are in LIVE environment and processing bone marrow
+- Need business context to determine if this is expected behavior or misconfiguration
+
+---
+
+## SLIDE 16A: Workflow-Sample Type Matrix
+
+**Visual:** Scenario 1 Visual 9 - Workflow-Sample Type Processing Matrix
+
+**What This Reveals:**
+- Heatmap showing which workflows process which sample types
+- Clear visualization of which workflows handle bone marrow vs blood/saliva
+- Reveals if workflows are mixed-use or specialized
+
+**Pattern Identification:**
+- Shows concentration of bone marrow processing in specific workflows
+- Helps identify if certain workflows are misconfigured
+- Reveals the scope of the issue across workflow portfolio
+
+---
+
+## SLIDE 16B: What the Time-Based Analysis Reveals
+
+**Visuals:** Scenario 1 Visuals 5, 6, 7 (Time of Day, Day of Week, Timeline)
+
+**Time-Based Findings:**
+
+**Time of Day Patterns:**
+- Blood/Saliva: Peak processing hours [from visual]
+- Bone Marrow: Peak processing hours [from visual]
+- Pattern: [Same time vs different times - indicates operational difference or same operations?]
+
+**Day of Week Patterns:**
+- Blood/Saliva: Processing distribution [from visual]
+- Bone Marrow: Processing distribution [from visual]
+- Pattern: [Same days vs different days - indicates routine vs special processing?]
+
+**Timeline Pattern:**
+- Bone marrow processing trend over time: [increasing/decreasing/consistent]
+- Relationship to blood/saliva processing: [correlated/independent]
+- Historical context: When did bone marrow processing start?
+
+**What This Tells Us:**
+- Processing patterns reveal [data-driven insights]
+- Timing differences (if any) suggest [interpretation]
+- Cannot determine fault from temporal patterns alone
 
 ---
 
@@ -544,29 +642,121 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 ---
 
-## SLIDE 22: Scenario 2 - Recommendations
+## SLIDE 22: Deeper Trend Analysis - Workflow Lifecycle
 
-**Immediate Actions:**
+**Visual:** Scenario 2 Visual 5 - Workflow Creation Trends
 
-1. **Proactive Engagement:**
-   - Contact customer success team
-   - Schedule check-in call with customer
-   - Understand reason for August decline
+**What We're Analyzing:**
+- When were live workflows created (WORKFLOW_TIMESTAMP)?
+- Are new workflows being introduced over time?
+- Does workflow creation correlate with usage changes?
 
-2. **Monitoring:**
-   - Track September usage closely
-   - Monitor for consecutive declines
-   - Watch for workflow migration patterns
+**Why This Matters:**
+- New workflows might indicate platform expansion
+- Workflow lifecycle patterns reveal operational changes
+- Helps understand usage trends at a deeper level
 
-3. **Data Analysis:**
-   - Review if specific workflows declined
-   - Check for archived/retired workflows
-   - Identify any operational issues
+---
 
-4. **Risk Mitigation:**
-   - If decline continues in September, escalate as HIGH RISK
-   - Prepare retention strategies
-   - Review pricing/value proposition
+## SLIDE 22A: Run Duration Analysis
+
+**Visual:** Scenario 2 Visual 6 - Run Duration Trends
+
+**What We're Analyzing:**
+- How long do runs take (START_TIME to STOP_TIME)?
+- Are run durations changing over time?
+- Do longer run times correlate with usage declines?
+
+**Why This Matters:**
+- Operational efficiency indicators
+- Long run times might explain usage patterns
+- Performance issues could affect customer satisfaction
+
+---
+
+## SLIDE 22B: Daily Usage Patterns
+
+**Visual:** Scenario 2 Visual 7 - Daily Usage Timeline
+
+**What We're Analyzing:**
+- Daily processing patterns using all samples in LIVE runs
+- Actual customer usage regardless of QC outcome
+- Daily volatility and trends
+
+**Why This Matters:**
+- Shows real customer usage patterns
+- Includes all processing activity (not just pass QC)
+- Reveals day-to-day operational patterns
+
+---
+
+## SLIDE 22C: Weekly Usage Patterns
+
+**Visual:** Scenario 2 Visual 8 - Weekly Usage Patterns
+
+**What We're Analyzing:**
+- Usage patterns by day of week
+- Weekly operational cycles
+- Business pattern identification
+
+**Why This Matters:**
+- Identifies weekly operational cycles
+- Reveals if certain days have higher/lower usage
+- Shows business operational patterns
+
+---
+
+## SLIDE 22D: Real-World Customer Health Metrics
+
+**Visual:** Scenario 2 Visual 9 - Customer Health Dashboard
+
+**What We're Measuring:**
+Using industry-standard customer success metrics to assess customer health:
+
+1. **Churn Risk Indicators:**
+   - Consecutive monthly declines: [X] months
+   - Latest MoM change: [X]%
+   - Risk Level: [HIGH/MEDIUM/LOW]
+
+2. **Engagement Metrics:**
+   - Active Workflows: [X] / Total: [Y]
+   - Workflow Utilization: [X]%
+   - Workflow Diversity Index: [X] (0-1, higher = more diverse)
+
+3. **Growth Velocity:**
+   - Recent Growth: [X]%
+   - Overall Growth: [X]%
+   - Growth Trajectory: [ACCELERATING/DECELERATING/STABLE]
+
+4. **Operational Health:**
+   - Success Rate: [X]%
+   - Operational Status: [HEALTHY/WARNING/CRITICAL]
+
+5. **Usage Concentration:**
+   - Top Workflow: [X]% of total usage
+   - Top 3 Workflows: [X]% of total usage
+   - Concentration Risk: [HIGH/MEDIUM/LOW]
+
+6. **Platform Maturity:**
+   - Average Workflow Age: [X] days
+   - New vs Established Workflows: [X / Y]
+   - Maturity Level: [MATURE/GROWING/NEW]
+
+---
+
+## SLIDE 22E: Churn Risk Timeline
+
+**Visual:** Scenario 2 Visual 10 - Churn Risk Timeline
+
+**What We're Analyzing:**
+- Usage trends over time with churn risk markers
+- Highlights concerning periods with significant drops
+- Current risk level indicator
+
+**Why This Matters:**
+- Visualizes churn risk progression over time
+- Identifies when risk increased/decreased
+- Provides actionable timeline for customer success team
 
 ---
 
@@ -574,57 +764,114 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 ---
 
-## SLIDE 23: Key Takeaways
+## SLIDE 23: Key Findings - What the Data Shows
 
 **Scenario 1 - Billing Reconciliation:**
 
-Customer is correct - 15.4% overbilling confirmed
-Issue is systemic across all months
-Root cause identified: Bone marrow in live workflows
-Immediate fix required for billing logic
+**What Happened:**
+- 15.4% difference between customer expectation and invoice in latest month
+- Bone marrow samples are being processed in LIVE environment
+- Pattern is consistent across all months (10-18% range)
+- [X] specific workflows are processing bone marrow
+- Time-based analysis reveals processing patterns (when/how often)
+
+**What This Means:**
+- The data shows bone marrow IS in LIVE workflows
+- This is NOT a data classification error - workflows are configured as LIVE
+- Cannot determine fault from data alone - need business context
+- Key Questions:
+  - Are these workflows supposed to be in production?
+  - Did customer configure these workflows, or system default?
+  - Why do these workflows process bone marrow if customer only expects blood/saliva?
+  - When did bone marrow processing start - recent or ongoing?
+- Further investigation needed: Why is bone marrow in production?
 
 **Scenario 2 - Customer Health:**
 
-Strong overall growth but recent decline
-Health status: AT RISK (requires attention)
-Service quality remains high
-Need to monitor next month closely
+**What the Data Shows:**
+- Strong overall growth trend (62.5% from May to August)
+- Single month decline in August (18.8%)
+- Decline concentrated in archived workflows
+- Service quality remains high (success rate >90%)
+- Comprehensive trend analysis reveals workflow lifecycle patterns, run duration trends, daily/weekly cycles
+- Real-world metrics: Churn risk, engagement, growth velocity, operational health, usage concentration, platform maturity
+
+**What This Means:**
+- Overall usage trend is positive
+- August decline may be related to intentional workflow archiving
+- Customer health metrics provide actionable insights for customer success team
+- Risk level assessment based on comprehensive metrics
+- Further monitoring needed to determine if trend continues
 
 ---
 
-## SLIDE 24: Action Items
+## SLIDE 24: Data-Driven Summary - What We Know
 
-**Priority 1 - Immediate (This Week):**
+**Scenario 1 - What We Know:**
 
-1. Calculate total overbilling across all months
-2. Prepare credit/refund for customer
-3. Schedule customer success check-in call
-4. Review and fix workflow billing classification
+1. **The Facts:**
+   - Bone marrow samples ARE being processed in LIVE workflows
+   - [X] specific workflows are processing bone marrow
+   - This is not a data classification error - the workflows are configured as LIVE in production
+   - Pattern is consistent across all months (10-18% range)
+   - Time-based analysis reveals processing patterns (time of day, day of week, timeline)
+   - Workflow-sample type matrix shows which workflows handle which sample types
 
-**Priority 2 - Short Term (This Month):**
+2. **What We Cannot Determine from Data Alone:**
+   - Who is responsible (customer workflow configuration vs system setup)
+   - Whether this is expected behavior or a configuration issue
+   - Whether bone marrow should be allowed in LIVE workflows
+   - Why these workflows process bone marrow when customer claims only blood/saliva
 
-1. Implement billing validation checks
-2. Set up monthly billing reconciliation process
-3. Monitor September usage closely
-4. Review archived workflows impact
+3. **What Additional Information Would Help:**
+   - Business rules: Should bone marrow be in LIVE workflows?
+   - Customer configuration: Did customer set up these workflows, or were they system defaults?
+   - Historical context: When did bone marrow processing start - recent change or ongoing?
+   - Workflow purpose: What is the intended use of these workflows?
 
-**Priority 3 - Ongoing:**
+**Scenario 2 - What We Know:**
 
-1. Regular monthly billing audits
-2. Customer health monitoring dashboard
-3. Proactive customer engagement program
+1. **The Facts:**
+   - Strong overall growth trend (62.5% from May to August)
+   - Single month decline in August (18.8%)
+   - Decline concentrated in archived workflows
+   - Service quality remains high (success rate >90%)
+   - Comprehensive trend analysis reveals:
+     - Workflow creation patterns over time
+     - Run duration trends
+     - Daily usage volatility and patterns
+     - Weekly operational cycles
+   - Real-world metrics: Churn risk, engagement, growth velocity, operational health, usage concentration, platform maturity
+
+2. **What This Tells Us:**
+   - Overall usage trend is positive
+   - August decline may be related to intentional workflow archiving
+   - Customer health metrics provide actionable insights for customer success team
+   - Risk level assessment based on comprehensive metrics
+   - Need more data to determine if trend continues
 
 ---
 
 ## SLIDE 25: Questions & Discussion
 
-**Key Questions for Discussion:**
+**Key Questions for Further Investigation:**
 
-1. What is the historical context for customer's usage patterns?
-2. Are there known seasonal variations we should account for?
-3. What are the workflow classification rules?
-4. How can we improve billing accuracy going forward?
-5. What retention strategies should we prepare?
+1. **Scenario 1:**
+   - What are the business rules for sample types in LIVE workflows?
+   - Is bone marrow processing expected in production?
+   - Who configured the workflows - customer or system default?
+   - Has this always been the case or is it a recent change?
+   - Why do these specific workflows process bone marrow when customer expects only blood/saliva?
+   - Are the workflows that process bone marrow supposed to be in LIVE environment?
+   - What does the time-based pattern tell us about how bone marrow is being processed?
+
+2. **Scenario 2:**
+   - What is the historical context for customer's usage patterns?
+   - Are there known seasonal variations we should account for?
+   - Why are workflows being archived - intentional or system-related?
+   - What external factors might affect usage patterns?
+   - Based on real-world metrics, what is the appropriate customer success action?
+   - What do the workflow lifecycle and run duration patterns indicate about customer operations?
 
 **Open for Questions**
 
@@ -648,16 +895,16 @@ Need to monitor next month closely
 
 ### Slide Flow:
 1. Start with the problem (customer dispute)
-2. Show the data that validates the customer's claim
-3. Identify the root cause
-4. Provide recommendations
+2. Show the data to investigate what happened
+3. Analyze time-based patterns to explain when/how samples are processed
+4. Identify what the data shows (not assigning fault)
 
 5. Shift to customer health
-6. Show the positive trends
-7. Highlight the risk indicators
-8. Provide monitoring recommendations
+6. Show usage trends with comprehensive analysis
+7. Analyze deeper patterns (workflow lifecycle, run duration, daily/weekly patterns)
+8. Explain what the data reveals about customer usage
 
-9. Conclude with actionable next steps
+9. Conclude with data-driven findings and questions for further investigation
 
 ### Visual Placement Guide:
 - **Data Overview:** Slides 2-9 (No visuals, data tables/diagrams can be added)
@@ -665,24 +912,44 @@ Need to monitor next month closely
 - **Scenario 1 Visual 2:** Slide 13 (Monthly Breakdown)
 - **Scenario 1 Visual 3:** Slide 14 (Sample Types)
 - **Scenario 1 Visual 4:** Slide 15 (Root Cause)
+- **Scenario 1 Visual 5:** Slide 15A (Time of Day Patterns)
+- **Scenario 1 Visual 6:** Slide 15B (Day of Week Patterns)
+- **Scenario 1 Visual 7:** Slide 15C (Sample Type Timeline)
+- **Scenario 1 Visual 8:** Slide 16 (Bone Marrow Workflow Investigation)
+- **Scenario 1 Visual 9:** Slide 16A (Workflow-Sample Type Matrix)
 
 - **Scenario 2 Visual 1:** Slide 17 (Usage Trend)
 - **Scenario 2 Visual 2:** Slide 18 (Growth Analysis)
 - **Scenario 2 Visual 3:** Slide 19 (Success Rate)
 - **Scenario 2 Visual 4:** Slide 20 (Health Summary)
+- **Scenario 2 Visual 5:** Slide 22 (Workflow Creation Trends)
+- **Scenario 2 Visual 6:** Slide 22A (Run Duration Trends)
+- **Scenario 2 Visual 7:** Slide 22B (Daily Usage Timeline)
+- **Scenario 2 Visual 8:** Slide 22C (Weekly Usage Patterns)
+- **Scenario 2 Visual 9:** Slide 22D (Customer Health Dashboard)
+- **Scenario 2 Visual 10:** Slide 22E (Churn Risk Timeline)
 
 ### Presentation Tips:
 1. Each visual should fill most of the slide
 2. Add 2-3 bullet points below each visual
 3. Keep text minimal - let the visuals tell the story
 4. Use consistent color scheme throughout (avoiding greens and solid reds for clarity)
-5. Practice transitions between scenarios
+5. All fonts are size 16 for readability
+6. Practice transitions between scenarios
+7. Emphasize data-driven findings, not assumptions about fault
+8. Use time-based analysis to explain patterns when possible
 
 ### Estimated Presentation Time:
-- Total: 22-27 minutes
+- Total: 28-35 minutes
 - Data & Methodology Overview: 4-5 minutes (Slides 2-9)
-- Scenario 1: 6-8 minutes (Slides 12-16)
-- Scenario 2: 6-8 minutes (Slides 17-22)
+- Scenario 1: 10-12 minutes (Slides 12-16B)
+  - Basic analysis: 3-4 minutes
+  - Deep investigation: 4-5 minutes
+  - Time-based analysis: 3-4 minutes
+- Scenario 2: 10-12 minutes (Slides 17-22E)
+  - Basic usage analysis: 4-5 minutes
+  - Deep trend analysis: 3-4 minutes
+  - Real-world metrics: 3-4 minutes
 - Conclusions: 2-3 minutes (Slides 23-24)
 - Q&A: 5-10 minutes
 

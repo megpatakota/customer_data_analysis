@@ -23,8 +23,8 @@ plt.rcParams["axes.grid"] = True
 plt.rcParams["grid.color"] = "#f0f0f0"
 plt.rcParams["grid.alpha"] = 0.3
 plt.rcParams["grid.linewidth"] = 0.5
-plt.rcParams["xtick.labelsize"] = 10
-plt.rcParams["ytick.labelsize"] = 10
+plt.rcParams["xtick.labelsize"] = 16
+plt.rcParams["ytick.labelsize"] = 16
 plt.rcParams["font.family"] = "sans-serif"
 
 # Color palette for consistency across all visualizations
