@@ -92,10 +92,18 @@ QC Checks ←─[WORKFLOW_ID]──→ Workflows
   - ARCHIVED
   - UNLABELED (no clear environment marker)
 
-**3. Data Quality Checks:**
-- Handled missing values in `SAMPLE_TYPE` and `QC_CHECK` fields
-- Validated workflow ID consistency across tables
-- Checked for duplicate records
+**3. Data Quality Assessment:**
+- **Missing Values:** Preserved and explicitly accounted for (not removed)
+  - `QC_CHECK = NaN`: Treated as valid (samples without QC checks are included in billable)
+  - `SAMPLE_TYPE = NaN`: Identified and counted separately (1 sample with null type found)
+  - Used `value_counts(dropna=False)` to see all missing values
+- **Workflow ID Consistency:** Implicitly validated through merge operations
+  - Left merges reveal orphaned records (QC checks without matching workflows)
+  - Inner merges ensure only matching records are included in analysis
+  - No explicit orphaned record check performed
+- **Duplicate Records:** Not explicitly checked - data used as-is from source
+  - Relies on source data quality
+  - No `.duplicated()` or `.drop_duplicates()` calls in analysis
 
 **4. Filtering & Subsetting:**
 - Applied environment filters for production analysis
@@ -121,7 +129,12 @@ A sample is considered billable if **ALL** of the following are true:
 - ✅ Sample is from a run with `OUTCOME = "finished"`
 - ✅ Sample has `QC_CHECK = "pass"` OR `QC_CHECK` is missing/NaN
 
-**Assumption:** Missing QC checks are treated as passed (common practice if QC not required)
+**⚠️ IMPORTANT ASSUMPTION - Missing QC Checks:**
+- **Current Approach:** Samples with missing `QC_CHECK` (NaN) are **included** in billable count
+- **Rationale:** Assumes missing QC = no QC required = implicitly passed
+- **Alternative Interpretation:** Missing QC could mean "unknown status" and should be excluded
+- **Impact:** This assumption affects the total billable count - needs business validation
+- **Recommendation:** Verify with business rules whether missing QC should be billable
 
 **3. Sample Type Classification:**
 - **Expected (Billable):** `blood`, `saliva`
@@ -152,8 +165,13 @@ A sample is considered billable if **ALL** of the following are true:
 
 **3. QC Status Handling:**
 - **Included:** Samples with `QC_CHECK = "pass"` OR `QC_CHECK = NaN`
-- **Assumption:** Missing QC results indicate samples passed default checks
-- **Rationale:** Not all samples may require explicit QC checks
+- **⚠️ CRITICAL ASSUMPTION:** Missing QC results (`NaN`) are treated as billable
+- **Business Question:** Should samples without QC data be billable?
+  - **Option A (Current Analysis):** Missing QC = No QC required = Billable
+  - **Option B (Alternative/Conservative):** Missing QC = Unknown status = NOT billable
+- **Impact:** This assumption directly affects ALL billing totals - requires business validation
+- **Sensitivity Analysis:** See notebook cell for exact impact numbers
+- **Recommendation:** Verify with business rules - if uncertain, use conservative approach
 
 **4. Overbilling Calculation:**
 ```
@@ -208,7 +226,44 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 ---
 
-## SLIDE 8: Data Limitations & Considerations
+## SLIDE 8: Critical Assumption - Missing QC Checks
+
+**The Question: How Should We Handle Missing QC Data?**
+
+**Current Approach in Analysis:**
+- Samples with `QC_CHECK = NaN` are **included** in billable count
+- Assumption: Missing QC = No QC required = Implicitly passed
+
+**Alternative Interpretation:**
+- Missing QC = Unknown status = Should be excluded from billable
+- More conservative approach: Only bill what we know passed
+
+**Why This Matters:**
+- This assumption directly impacts billing totals
+- Could affect overbilling calculations
+- Needs business rule validation
+
+**What We Should Do:**
+1. **Verify Business Rules:** Check if missing QC should be billable
+2. **Sensitivity Analysis:** Calculate results under both assumptions
+3. **Document Decision:** Clearly state which approach is used and why
+4. **Recommendation:** If uncertain, use conservative approach (exclude missing QC)
+
+**Data Impact:**
+- Run the "Sensitivity Analysis" cell in the notebook to see exact numbers
+- Shows: How many samples have missing QC, percentage impact, monthly comparison
+- **Key Point:** This assumption affects every billing calculation in the analysis
+
+**⚠️ This is a critical assumption that requires business validation before finalizing billing**
+
+**Recommendation:**
+- If business rules are unclear, use conservative approach (exclude missing QC)
+- Present both scenarios to stakeholders for decision
+- Document the final decision clearly in billing logic
+
+---
+
+## SLIDE 9: Data Limitations & Considerations
 
 **What We Know:**
 
@@ -226,14 +281,28 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 ⚠️ **Contract Terms:** Assumed blood/saliva only based on customer claim (not verified)
 
 **Assumptions Made:**
-1. Missing QC checks = passed (common industry practice)
-2. Customer contract allows only blood/saliva in production (based on dispute)
-3. 15% MoM decline = risk threshold (industry standard)
-4. Workflow naming convention is consistent (environment prefixes reliable)
+
+1. **Missing QC Checks = Billable** ⚠️ **REQUIRES VALIDATION**
+   - Current: Treated as billable (assumes no QC required)
+   - Alternative: Could be treated as unknown/not billable
+   - **Impact:** Affects total billable count - needs business rule confirmation
+
+2. **Customer Contract Terms**
+   - Assumed: Only blood/saliva allowed in production (based on customer dispute)
+   - **Note:** Not verified against actual contract - assumption based on customer claim
+
+3. **Risk Thresholds**
+   - 15% MoM decline = risk indicator (industry standard)
+   - 20% workflow decline = concerning pattern
+   - **Note:** Thresholds are standard but may need customer-specific calibration
+
+4. **Workflow Naming Convention**
+   - Assumed: Environment prefixes (e.g., [LIVE], [TEST]) are reliable
+   - **Validation:** Regex-based extraction validated against data patterns
 
 ---
 
-## SLIDE 9: Executive Summary
+## SLIDE 10: Executive Summary
 
 **Key Findings:**
 
@@ -252,7 +321,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 ---
 
-## SLIDE 10: Agenda
+## SLIDE 11: Agenda
 
 1. **Data & Methodology Overview** ✅ (Just completed)
    - Data structure and organization
@@ -277,7 +346,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 ---
 
-## SLIDE 11: The Problem Statement
+## SLIDE 12: The Problem Statement
 
 **Customer Dispute:**
 
@@ -294,7 +363,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 ---
 
-## SLIDE 12: Monthly Billing Breakdown
+## SLIDE 13: Monthly Billing Breakdown
 
 **What the Data Shows:**
 
@@ -311,7 +380,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 ---
 
-## SLIDE 13: Sample Type Breakdown
+## SLIDE 14: Sample Type Breakdown
 
 **What Types Are Being Billed?**
 
@@ -332,7 +401,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 ---
 
-## SLIDE 14: Root Cause Analysis
+## SLIDE 15: Root Cause Analysis
 
 **Where Are These Non-Billable Samples Coming From?**
 
@@ -350,7 +419,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 ---
 
-## SLIDE 15: Scenario 1 - Recommendations
+## SLIDE 16: Scenario 1 - Recommendations
 
 **Immediate Actions:**
 
@@ -378,7 +447,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 ---
 
-## SLIDE 16: Customer Usage Trend
+## SLIDE 17: Customer Usage Trend
 
 **The Big Picture:**
 
@@ -396,7 +465,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 ---
 
-## SLIDE 17: Month-over-Month Growth Analysis
+## SLIDE 18: Month-over-Month Growth Analysis
 
 **Understanding the Volatility:**
 
@@ -414,7 +483,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 ---
 
-## SLIDE 18: Production Run Success Rate
+## SLIDE 19: Production Run Success Rate
 
 **Operational Quality Assessment:**
 
@@ -432,7 +501,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 ---
 
-## SLIDE 19: Customer Health Summary
+## SLIDE 20: Customer Health Summary
 
 **Overall Health Assessment:**
 
@@ -451,7 +520,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 ---
 
-## SLIDE 20: Scenario 2 - Risk Assessment
+## SLIDE 21: Scenario 2 - Risk Assessment
 
 **Why "AT RISK"?**
 
@@ -471,7 +540,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 ---
 
-## SLIDE 21: Scenario 2 - Recommendations
+## SLIDE 22: Scenario 2 - Recommendations
 
 **Immediate Actions:**
 
@@ -501,7 +570,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 ---
 
-## SLIDE 22: Key Takeaways
+## SLIDE 23: Key Takeaways
 
 **Scenario 1 - Billing Reconciliation:**
 
@@ -519,7 +588,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 ---
 
-## SLIDE 23: Action Items
+## SLIDE 24: Action Items
 
 **Priority 1 - Immediate (This Week):**
 
@@ -543,7 +612,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 ---
 
-## SLIDE 24: Questions & Discussion
+## SLIDE 25: Questions & Discussion
 
 **Key Questions for Discussion:**
 
@@ -557,7 +626,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 ---
 
-## SLIDE 25: Thank You
+## SLIDE 26: Thank You
 
 **Thank You for Your Time**
 
@@ -587,16 +656,16 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 9. Conclude with actionable next steps
 
 ### Visual Placement Guide:
-- **Data Overview:** Slides 2-8 (No visuals, data tables/diagrams can be added)
-- **Scenario 1 Visual 1:** Slide 11 (The Problem)
-- **Scenario 1 Visual 2:** Slide 12 (Monthly Breakdown)
-- **Scenario 1 Visual 3:** Slide 13 (Sample Types)
-- **Scenario 1 Visual 4:** Slide 14 (Root Cause)
+- **Data Overview:** Slides 2-9 (No visuals, data tables/diagrams can be added)
+- **Scenario 1 Visual 1:** Slide 12 (The Problem)
+- **Scenario 1 Visual 2:** Slide 13 (Monthly Breakdown)
+- **Scenario 1 Visual 3:** Slide 14 (Sample Types)
+- **Scenario 1 Visual 4:** Slide 15 (Root Cause)
 
-- **Scenario 2 Visual 1:** Slide 16 (Usage Trend)
-- **Scenario 2 Visual 2:** Slide 17 (Growth Analysis)
-- **Scenario 2 Visual 3:** Slide 18 (Success Rate)
-- **Scenario 2 Visual 4:** Slide 19 (Health Summary)
+- **Scenario 2 Visual 1:** Slide 17 (Usage Trend)
+- **Scenario 2 Visual 2:** Slide 18 (Growth Analysis)
+- **Scenario 2 Visual 3:** Slide 19 (Success Rate)
+- **Scenario 2 Visual 4:** Slide 20 (Health Summary)
 
 ### Presentation Tips:
 1. Each visual should fill most of the slide
@@ -606,10 +675,10 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 5. Practice transitions between scenarios
 
 ### Estimated Presentation Time:
-- Total: 20-25 minutes
-- Data & Methodology Overview: 3-4 minutes (Slides 2-8)
-- Scenario 1: 6-8 minutes (Slides 11-15)
-- Scenario 2: 6-8 minutes (Slides 16-21)
-- Conclusions: 2-3 minutes (Slides 22-23)
+- Total: 22-27 minutes
+- Data & Methodology Overview: 4-5 minutes (Slides 2-9)
+- Scenario 1: 6-8 minutes (Slides 12-16)
+- Scenario 2: 6-8 minutes (Slides 17-22)
+- Conclusions: 2-3 minutes (Slides 23-24)
 - Q&A: 5-10 minutes
 
