@@ -62,7 +62,7 @@ def visual1_usage_trend(billable_live):
         mom = row["MOM_CHANGE_PCT"]
         
         if mom < -15:
-            # Big red marker for significant drop
+            # Marker for significant drop
             ax.scatter(i, val, s=500, color=COLORS["danger"], zorder=5, 
                       edgecolor="white", linewidth=3, marker='v')
             ax.annotate(f"ALERT\n{mom:.1f}% drop",
@@ -77,10 +77,10 @@ def visual1_usage_trend(billable_live):
     
     ax.set_xticks(range(len(um_plot)))
     ax.set_xticklabels(um_plot["YEAR_MONTH_STR"], fontsize=12, weight="bold")
-    ax.set_ylabel("Billable Samples", fontsize=14, weight="bold")
-    ax.set_xlabel("Month", fontsize=14, weight="bold")
+    ax.set_ylabel("Billable Samples", fontsize=14, weight="bold", color="black")
+    ax.set_xlabel("Month", fontsize=14, weight="bold", color="black")
     ax.set_title("Scenario 2: Production Usage Trend - Monthly Live Billable Samples Over Time",
-                 fontsize=16, weight="bold", pad=20)
+                 fontsize=16, weight="bold", pad=20, color="black")
     ax.legend(loc="upper left", frameon=True, fontsize=12)
     ax.set_ylim(0, um_plot["BILLABLE_SAMPLES"].max() * 1.25)
     ax.spines['top'].set_visible(False)
@@ -100,7 +100,7 @@ def visual2_mom_growth(billable_live):
     Visual 2: Month-over-Month Growth Rate
     
     Shows percentage change from one month to the next.
-    Color-coded bars indicate growth (green), decline (red), or stability (blue).
+    Color-coded bars indicate growth, decline, or stability patterns.
     
     Why this visual:
     - Makes volatility immediately visible
@@ -158,10 +158,10 @@ def visual2_mom_growth(billable_live):
     
     ax.set_xticks(range(len(um_plot)))
     ax.set_xticklabels(um_plot["YEAR_MONTH_STR"], fontsize=12, weight="bold")
-    ax.set_ylabel("Month-over-Month Change (%)", fontsize=14, weight="bold")
-    ax.set_xlabel("Month", fontsize=14, weight="bold")
-    ax.set_title("Scenario 2: Month-over-Month Growth Analysis - Red = Significant Drop | Green = Strong Growth",
-                 fontsize=16, weight="bold", pad=20)
+    ax.set_ylabel("Month-over-Month Change (%)", fontsize=14, weight="bold", color="black")
+    ax.set_xlabel("Month", fontsize=14, weight="bold", color="black")
+    ax.set_title("Scenario 2: Month-over-Month Growth Analysis - Significant Drops vs Strong Growth",
+                 fontsize=16, weight="bold", pad=20, color="black")
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_linewidth(2)
@@ -222,10 +222,10 @@ def visual3_success_rate(df_runs):
     
     ax.set_xticks(range(len(sr_plot)))
     ax.set_xticklabels(sr_plot["YEAR_MONTH_STR"], fontsize=12, weight="bold")
-    ax.set_ylabel("Success Rate (%)", fontsize=14, weight="bold")
-    ax.set_xlabel("Month", fontsize=14, weight="bold")
+    ax.set_ylabel("Success Rate (%)", fontsize=14, weight="bold", color="black")
+    ax.set_xlabel("Month", fontsize=14, weight="bold", color="black")
     ax.set_title("Scenario 2: Production Run Success Rate Trend",
-                 fontsize=16, weight="bold", pad=20)
+                 fontsize=16, weight="bold", pad=20, color="black")
     ax.set_ylim(0, 105)
     ax.legend(loc="lower right", frameon=True, fontsize=11)
     ax.spines['top'].set_visible(False)
@@ -355,7 +355,7 @@ def visual4_health_summary(billable_live, df_runs):
                     edgecolor=status_color, linewidth=3),
            transform=ax.transAxes)
     
-    ax.set_title("Scenario 2: Customer Health Summary", fontsize=18, weight="bold", pad=20, transform=ax.transAxes)
+    ax.set_title("Scenario 2: Customer Health Summary", fontsize=18, weight="bold", pad=20, color="black", transform=ax.transAxes)
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     

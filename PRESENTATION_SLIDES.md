@@ -54,9 +54,9 @@
 
 **2. Data Relationships:**
 ```
-QC Checks ←─[WORKFLOW_ID]──→ Workflows
-    ↓                          ↑
-    └─[RUN_ID]──→ Runs ─[WORKFLOW_ID]─┘
+QC Checks --[WORKFLOW_ID]--> Workflows
+    |                          |
+    +--[RUN_ID]--> Runs --[WORKFLOW_ID]--+
 ```
 
 **3. Key Merges Performed:**
@@ -94,9 +94,10 @@ QC Checks ←─[WORKFLOW_ID]──→ Workflows
 
 **3. Data Quality Assessment:**
 - **Missing Values:** Preserved and explicitly accounted for (not removed)
-  - `QC_CHECK = NaN`: Treated as valid (samples without QC checks are included in billable)
+  - `QC_CHECK = NaN`: Excluded from billable analysis (only 1 sample found in finished LIVE runs, minimal impact)
   - `SAMPLE_TYPE = NaN`: Identified and counted separately (1 sample with null type found)
   - Used `value_counts(dropna=False)` to see all missing values
+  - **Decision:** Based on sensitivity analysis showing only 1 missing QC in finished LIVE runs, we exclude missing QC from billing
 - **Workflow ID Consistency:** Implicitly validated through merge operations
   - Left merges reveal orphaned records (QC checks without matching workflows)
   - Inner merges ensure only matching records are included in analysis
@@ -125,16 +126,16 @@ QC Checks ←─[WORKFLOW_ID]──→ Workflows
 
 **2. Definition of "Billable Samples":**
 A sample is considered billable if **ALL** of the following are true:
-- ✅ Sample is in a `[LIVE]` workflow
-- ✅ Sample is from a run with `OUTCOME = "finished"`
-- ✅ Sample has `QC_CHECK = "pass"` OR `QC_CHECK` is missing/NaN
+- Sample is in a `[LIVE]` workflow
+- Sample is from a run with `OUTCOME = "finished"`
+- Sample has `QC_CHECK = "pass"` only (missing QC excluded)
 
-**⚠️ IMPORTANT ASSUMPTION - Missing QC Checks:**
-- **Current Approach:** Samples with missing `QC_CHECK` (NaN) are **included** in billable count
-- **Rationale:** Assumes missing QC = no QC required = implicitly passed
-- **Alternative Interpretation:** Missing QC could mean "unknown status" and should be excluded
-- **Impact:** This assumption affects the total billable count - needs business validation
-- **Recommendation:** Verify with business rules whether missing QC should be billable
+**IMPORTANT DECISION - Missing QC Checks:**
+- **Approach Used:** Samples with missing `QC_CHECK` (NaN) are **excluded** from billable count
+- **Rationale:** Only 1 missing QC check found in finished LIVE runs (<0.03% impact)
+- **Sensitivity Analysis:** Performed to quantify impact - showed minimal effect (1 sample)
+- **Decision:** Based on low impact, we use conservative approach - only explicit "pass" QC is billable
+- **Documentation:** Sensitivity analysis cell in notebook shows the reasoning
 
 **3. Sample Type Classification:**
 - **Expected (Billable):** `blood`, `saliva`
@@ -155,27 +156,25 @@ A sample is considered billable if **ALL** of the following are true:
 **1. Production Focus:**
 - **Filter Applied:** `ENVIRONMENT == "live"` only
 - **Rationale:** Customer dispute specifically mentions "production workloads"
-- **Data Impact:** Reduced from 6,405 total samples to 3,608 billable live samples
+- **Data Impact:** Reduced from 6,405 total samples to 3,607 billable live samples (excluding 1 missing QC)
 
 **2. Run Outcome Filtering:**
 - **Included:** Only samples from runs where `OUTCOME = "finished"`
 - **Excluded:** Failed runs, canceled runs
 - **Rationale:** Only successfully completed runs should be billed
-- **Data Impact:** From 4,057 samples in live runs → 3,608 billable samples
+- **Data Impact:** From 4,057 samples in live runs to 3,607 billable samples (excluding 1 missing QC)
 
 **3. QC Status Handling:**
-- **Included:** Samples with `QC_CHECK = "pass"` OR `QC_CHECK = NaN`
-- **⚠️ CRITICAL ASSUMPTION:** Missing QC results (`NaN`) are treated as billable
-- **Business Question:** Should samples without QC data be billable?
-  - **Option A (Current Analysis):** Missing QC = No QC required = Billable
-  - **Option B (Alternative/Conservative):** Missing QC = Unknown status = NOT billable
-- **Impact:** This assumption directly affects ALL billing totals - requires business validation
-- **Sensitivity Analysis:** See notebook cell for exact impact numbers
-- **Recommendation:** Verify with business rules - if uncertain, use conservative approach
+- **Included:** Samples with `QC_CHECK = "pass"` only
+- **Excluded:** Samples with `QC_CHECK = NaN` (missing QC)
+- **Decision:** Based on sensitivity analysis showing only 1 missing QC in finished LIVE runs
+- **Impact:** Minimal (<0.03% of billable samples) - justifies exclusion
+- **Sensitivity Analysis:** Performed to justify this decision - results show negligible impact
+- **Rationale:** Conservative approach - only bill what we know passed QC
 
 **4. Overbilling Calculation:**
 ```
-Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
+Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 ```
 - Calculated both all-time and monthly
 - Monthly view allows comparison across billing periods
@@ -213,7 +212,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 **5. Success Rate Analysis:**
 - Calculated separately for Scenario 2 Visual 3
-- Formula: `(Finished Runs / Total Runs) × 100`
+- Formula: `(Finished Runs / Total Runs) x 100`
 - Thresholds: 90% target, 80% warning level
 - **Purpose:** Assess operational quality separately from usage trends
 
@@ -226,40 +225,44 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 ---
 
-## SLIDE 8: Critical Assumption - Missing QC Checks
+## SLIDE 8: Sensitivity Analysis - Missing QC Checks
 
 **The Question: How Should We Handle Missing QC Data?**
 
-**Current Approach in Analysis:**
-- Samples with `QC_CHECK = NaN` are **included** in billable count
-- Assumption: Missing QC = No QC required = Implicitly passed
+**Sensitivity Analysis Performed:**
+- Analyzed impact of including vs excluding missing QC checks
+- Quantified the billing impact of this decision
 
-**Alternative Interpretation:**
-- Missing QC = Unknown status = Should be excluded from billable
-- More conservative approach: Only bill what we know passed
+**Findings:**
+- **Only 1 missing QC check** found in finished LIVE runs
+- **Impact:** <0.03% of billable samples
+- **Interpretation:** Negligible impact on billing totals
+
+**Decision Made:**
+- **Approach Used:** Exclude missing QC from billing analysis
+- **Rationale:** Minimal impact (only 1 sample) justifies conservative approach
+- **Result:** Only samples with explicit `QC_CHECK = "pass"` are included
 
 **Why This Matters:**
-- This assumption directly impacts billing totals
-- Could affect overbilling calculations
-- Needs business rule validation
+- Ensures billing accuracy by only including verified QC passes
+- Conservative approach reduces risk of incorrect billing
+- Low impact means decision has minimal business consequences
 
-**What We Should Do:**
-1. **Verify Business Rules:** Check if missing QC should be billable
-2. **Sensitivity Analysis:** Calculate results under both assumptions
-3. **Document Decision:** Clearly state which approach is used and why
-4. **Recommendation:** If uncertain, use conservative approach (exclude missing QC)
+**What We Did:**
+1. **Performed Sensitivity Analysis:** Calculated results under both assumptions
+2. **Quantified Impact:** Only 1 sample affected (<0.03% of total)
+3. **Made Decision:** Excluded missing QC based on minimal impact
+4. **Documented Reasoning:** Sensitivity analysis cell shows the justification
 
 **Data Impact:**
-- Run the "Sensitivity Analysis" cell in the notebook to see exact numbers
-- Shows: How many samples have missing QC, percentage impact, monthly comparison
-- **Key Point:** This assumption affects every billing calculation in the analysis
+- Sensitivity analysis shows: 3,607 samples with pass QC + 1 missing QC = 3,608 total
+- Decision to exclude missing QC results in 3,607 billable samples
+- Difference: 1 sample (<0.03% impact)
 
-**⚠️ This is a critical assumption that requires business validation before finalizing billing**
-
-**Recommendation:**
-- If business rules are unclear, use conservative approach (exclude missing QC)
-- Present both scenarios to stakeholders for decision
-- Document the final decision clearly in billing logic
+**Conclusion:**
+- Decision justified by data - minimal impact
+- Conservative approach ensures billing accuracy
+- Sensitivity analysis provides transparency and reasoning
 
 ---
 
@@ -267,25 +270,26 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 **What We Know:**
 
-✅ **Complete Coverage:** All production (LIVE) workflows included
-✅ **Time Period:** 4 months of data (May-August 2025)
-✅ **Data Quality:** No missing critical fields in production data
-✅ **Environment Classification:** Accurately identified production vs non-production
+**Complete Coverage:** All production (LIVE) workflows included
+**Time Period:** 4 months of data (May-August 2025)
+**Data Quality:** No missing critical fields in production data
+**Environment Classification:** Accurately identified production vs non-production
 
 **What We Don't Know:**
 
-⚠️ **Historical Context:** No data before May 2025 (can't assess longer-term trends)
-⚠️ **Seasonal Patterns:** Limited to 4 months (insufficient for seasonality analysis)
-⚠️ **Customer Intent:** Can't determine if August decline is intentional or concerning
-⚠️ **Workflow Purpose:** Unclear why bone marrow samples are in LIVE workflows
-⚠️ **Contract Terms:** Assumed blood/saliva only based on customer claim (not verified)
+**Historical Context:** No data before May 2025 (can't assess longer-term trends)
+**Seasonal Patterns:** Limited to 4 months (insufficient for seasonality analysis)
+**Customer Intent:** Can't determine if August decline is intentional or concerning
+**Workflow Purpose:** Unclear why bone marrow samples are in LIVE workflows
+**Contract Terms:** Assumed blood/saliva only based on customer claim (not verified)
 
 **Assumptions Made:**
 
-1. **Missing QC Checks = Billable** ⚠️ **REQUIRES VALIDATION**
-   - Current: Treated as billable (assumes no QC required)
-   - Alternative: Could be treated as unknown/not billable
-   - **Impact:** Affects total billable count - needs business rule confirmation
+1. **Missing QC Checks = Excluded** **DECISION MADE**
+   - Decision: Excluded from billing (conservative approach)
+   - Rationale: Only 1 missing QC found in finished LIVE runs (<0.03% impact)
+   - **Impact:** Minimal - sensitivity analysis justifies exclusion
+   - **Documentation:** Sensitivity analysis cell provides reasoning
 
 2. **Customer Contract Terms**
    - Assumed: Only blood/saliva allowed in production (based on customer dispute)
@@ -323,7 +327,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 ## SLIDE 11: Agenda
 
-1. **Data & Methodology Overview** ✅ (Just completed)
+1. **Data & Methodology Overview** (Just completed)
    - Data structure and organization
    - Cleaning and transformation steps
    - Analytical assumptions
@@ -359,7 +363,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 **Key Point:** 
 - Customer expects: 883 samples (blood + saliva only)
 - We invoiced: 1,019 samples
-- **Overbilling: 15.4%** ✓ Customer is correct
+- **Overbilling: 15.4%** Customer is correct
 
 ---
 
@@ -456,8 +460,8 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 **Growth Pattern:**
 - May: 627 samples
 - June: 707 samples (+12.8%)
-- July: 1,255 samples (+77.5%) ← Peak
-- August: 1,019 samples (-18.8%) ← **ALERT**
+- July: 1,255 samples (+77.5%) Peak
+- August: 1,019 samples (-18.8%) **ALERT**
 
 **Overall Growth:** 62.5% from May to August
 
@@ -574,17 +578,17 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 
 **Scenario 1 - Billing Reconciliation:**
 
-✅ Customer is correct - 15.4% overbilling confirmed
-✅ Issue is systemic across all months
-✅ Root cause identified: Bone marrow in live workflows
-✅ Immediate fix required for billing logic
+Customer is correct - 15.4% overbilling confirmed
+Issue is systemic across all months
+Root cause identified: Bone marrow in live workflows
+Immediate fix required for billing logic
 
 **Scenario 2 - Customer Health:**
 
-⚠️ Strong overall growth but recent decline
-⚠️ Health status: AT RISK (requires attention)
-✅ Service quality remains high
-⚠️ Need to monitor next month closely
+Strong overall growth but recent decline
+Health status: AT RISK (requires attention)
+Service quality remains high
+Need to monitor next month closely
 
 ---
 
@@ -671,7 +675,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) × 100
 1. Each visual should fill most of the slide
 2. Add 2-3 bullet points below each visual
 3. Keep text minimal - let the visuals tell the story
-4. Use consistent color scheme throughout
+4. Use consistent color scheme throughout (avoiding greens and solid reds for clarity)
 5. Practice transitions between scenarios
 
 ### Estimated Presentation Time:

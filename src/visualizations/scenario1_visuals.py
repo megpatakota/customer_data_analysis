@@ -57,9 +57,9 @@ def visual1_billing_dispute(monthly, billable_live):
                 bbox=dict(boxstyle="round,pad=1", facecolor="white", edgecolor=COLORS["danger"], linewidth=3),
                 arrowprops=dict(arrowstyle="->", color=COLORS["danger"], lw=3))
     
-    ax.set_ylabel("Billable Samples", fontsize=14, weight="bold")
+    ax.set_ylabel("Billable Samples", fontsize=14, weight="bold", color="black")
     ax.set_title(f"Scenario 1: {latest_month} Billing Dispute - Customer Claims 15% Overbilling",
-                 fontsize=16, weight="bold", pad=20)
+                 fontsize=16, weight="bold", pad=20, color="black")
     ax.set_ylim(0, actual_val * 1.35)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -126,10 +126,10 @@ def visual2_monthly_trend(monthly):
     
     ax.set_xticks(x_pos)
     ax.set_xticklabels(monthly_plot["YEAR_MONTH_STR"], fontsize=12, weight="bold")
-    ax.set_ylabel("Billable Samples", fontsize=14, weight="bold")
-    ax.set_xlabel("Month", fontsize=14, weight="bold")
-    ax.set_title("Scenario 1: Monthly Billing Breakdown - Expected (Blue) vs Overbilled (Red)",
-                 fontsize=16, weight="bold", pad=20)
+    ax.set_ylabel("Billable Samples", fontsize=14, weight="bold", color="black")
+    ax.set_xlabel("Month", fontsize=14, weight="bold", color="black")
+    ax.set_title("Scenario 1: Monthly Billing Breakdown - Expected vs Overbilled",
+                 fontsize=16, weight="bold", pad=20, color="black")
     ax.legend(loc="upper left", frameon=True, fontsize=12)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -205,9 +205,9 @@ def visual3_sample_types(billable_live):
             ax.text(v + max_count * 0.03, i, f"{v:,} ({pct:.1f}%)", 
                    va="center", fontsize=11, weight='bold', color=color)
     
-    ax.set_xlabel("Number of Samples", fontsize=14, weight="bold")
+    ax.set_xlabel("Number of Samples", fontsize=14, weight="bold", color="black")
     ax.set_title("Scenario 1: Sample Type Breakdown - Expected vs Overbilled Types",
-                 fontsize=16, weight="bold", pad=20)
+                 fontsize=16, weight="bold", pad=20, color="black")
     ax.set_xlim(0, max_count * 1.15)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -262,9 +262,9 @@ def visual4_root_cause(billable_live):
         ax.text(label_x, i, f"{v:,} samples", 
                va="center", fontsize=11, weight='bold', color=COLORS["danger"])
     
-    ax.set_xlabel("Bone Marrow Samples Billed", fontsize=14, weight="bold")
+    ax.set_xlabel("Bone Marrow Samples Billed", fontsize=14, weight="bold", color="black")
     ax.set_title("Scenario 1: Root Cause Analysis - Top Live Workflows Billing Bone Marrow Samples",
-                fontsize=16, weight="bold", pad=20, color=COLORS["danger"])
+                fontsize=16, weight="bold", pad=20, color="black")
     ax.set_xlim(0, max_val * 1.18)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
