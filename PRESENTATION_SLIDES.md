@@ -369,9 +369,9 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 **Visual:** Scenario 1 Visual 1 - The Billing Dispute (Executive Summary)
 
 **Initial Observation:** 
-- Customer expects: 883 samples (blood + saliva only)
-- We invoiced: 1,019 samples
-- **Difference: 15.4%** - Need to investigate patterns
+- Customer expects: 882 samples (blood + saliva only, latest month)
+- We invoiced: 1,018 samples (including other types)
+- **Difference: 15.4%** - Non-blood/saliva samples explain almost all of this gap
 
 ---
 
@@ -379,7 +379,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 **What the Data Shows:**
 
-- Overbilling has been consistent across all months (ranging from 12.1% to 15.4%)
+- Overbilling has been consistent across all months (ranging from ~10% to ~18%)
 - The issue is not isolated to one month
 - Pattern: Blood/Saliva (expected) + Bone Marrow/Other (overbilled) = Total invoice
 
@@ -387,8 +387,8 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 **Key Insights:**
 - August (disputed month) shows 15.4% overbilling
-- Every month has some level of overbilling
-- The pattern is systemic, not a one-time error
+- Every month has some level of overbilling (10.2%, 13.5%, 18.0%, 15.4%)
+- The pattern is systemic, not a one-time error and peaks in July at ~18%
 
 ---
 
@@ -400,14 +400,14 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 **The Numbers:**
 - **Expected Types (Blood/Saliva):**
-  - Blood: [X] samples
-  - Saliva: [Y] samples
-  - **Total Expected: [X+Y] samples**
+  - Blood: 1,017 samples
+  - Saliva: 2,121 samples
+  - **Total Expected: 3,138 samples**
 
 - **Other Types Found in LIVE Environment:**
-  - Bone Marrow: [Z] samples (CRITICAL ISSUE)
-  - Other: [W] samples
-  - **Total Overbilled: [Z+W] samples**
+  - Bone Marrow: 468 samples (CRITICAL ISSUE)
+  - Other / null sample type: 1 sample
+  - **Total Overbilled: 469 samples (~14.9% uplift on top of blood+saliva)**
 
 **Key Insight:** Bone marrow represents the majority of overbilling
 
@@ -421,7 +421,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 **What the Data Shows:**
 - Multiple live workflows are processing bone marrow samples
-- Top [N] workflows account for [X]% of bone marrow samples
+- A small number of LIVE workflows account for the majority of bone marrow samples
 - These workflows are in the [LIVE] environment and processing bone marrow
 
 **Key Finding:** Bone marrow samples ARE being processed in LIVE workflows
@@ -514,6 +514,26 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 - Shows concentration of bone marrow processing in specific workflows
 - Helps identify if certain workflows are misconfigured
 - Reveals the scope of the issue across workflow portfolio
+
+---
+
+## SLIDE 16C: Scenario 1 – Additional Anomalies & Data Quality Findings
+
+**Beyond Bone Marrow – What Else Looks Anomalous?**
+
+- **Duplicate Records:**
+  - QC Checks table contains 269 fully duplicated rows and 279 duplicate key combinations (`RUN_ID`, `WORKFLOW_ID`, `SAMPLE_ID_HAEMONC_LAB_NO`) (~4–5% of QC data).
+  - Runs table contains 2 duplicate run IDs.
+  - These duplicates can inflate raw row counts, but the 15% discrepancy is already fully explained by bone marrow + null sample types.
+
+- **Orphaned & Unused Records:**
+  - 4 runs have no matching workflow (orphaned runs).
+  - 106 workflows have no associated checks or runs (unused workflows).
+  - These affect completeness and monitoring but do not drive the overbilling spike in the disputed month.
+
+- **Missing / Null Fields:**
+  - 92 missing QC results in finished LIVE runs (~2.2% of samples) and 1 sample with null `SAMPLE_TYPE` in billable data.
+  - Sensitivity analysis shows excluding missing QC changes billing by only 1 sample (<0.03%), so bone marrow remains the dominant driver of the dispute.
 
 ---
 

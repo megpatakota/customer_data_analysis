@@ -10,7 +10,7 @@
 **Use:** Scenario 1 Visual 1 - The Billing Dispute (Executive Summary)
 - **What it shows:** Side-by-side comparison of customer expectation vs actual invoice
 - **Key message:** Customer is correct - 15.4% overbilling confirmed
-- **Copy from:** Cell 10 in main.ipynb
+- **Copy from:** Cell 10 in `notebooks/main.ipynb`
 - **How to insert:** Right-click visual → Copy → Paste into slide
 
 ---
@@ -19,7 +19,7 @@
 **Use:** Scenario 1 Visual 2 - Monthly Billing Trend
 - **What it shows:** Stacked bars showing expected (blue) vs overbilled (red) samples each month
 - **Key message:** Overbilling is consistent across all months, not just August
-- **Copy from:** Cell 7 in main.ipynb
+- **Copy from:** Cell 7 in `notebooks/main.ipynb`
 - **How to insert:** Right-click visual → Copy → Paste into slide
 
 ---
@@ -28,7 +28,7 @@
 **Use:** Scenario 1 Visual 3 - Sample Type Breakdown
 - **What it shows:** Horizontal bars showing blood, saliva, bone marrow, and other samples
 - **Key message:** Bone marrow is the main source of overbilling
-- **Copy from:** Cell 8 in main.ipynb
+- **Copy from:** Cell 8 in `notebooks/main.ipynb`
 - **How to insert:** Right-click visual → Copy → Paste into slide
 
 ---
@@ -37,7 +37,7 @@
 **Use:** Scenario 1 Visual 4 - Root Cause Analysis
 - **What it shows:** Top workflows that are billing bone marrow samples
 - **Key message:** These specific workflows need to be fixed
-- **Copy from:** Cell 9 in main.ipynb
+- **Copy from:** Cell 9 in `notebooks/main.ipynb`
 - **How to insert:** Right-click visual → Copy → Paste into slide
 
 ---
@@ -48,7 +48,7 @@
 **Use:** Scenario 2 Visual 1 - Customer Usage Trend Over Time
 - **What it shows:** Line chart with trend showing monthly billable samples, highlighting August drop
 - **Key message:** Overall growth of 62.5%, but August shows significant decline
-- **Copy from:** Cell 12 in main.ipynb
+- **Copy from:** Cell 12 in `notebooks/main.ipynb`
 - **How to insert:** Right-click visual → Copy → Paste into slide
 
 ---
@@ -57,7 +57,7 @@
 **Use:** Scenario 2 Visual 2 - Month-over-Month Growth Rate
 - **What it shows:** Bar chart showing growth/decline percentages per month (color-coded)
 - **Key message:** August drop (-18.8%) exceeds risk threshold (-15%)
-- **Copy from:** Cell 13 in main.ipynb
+- **Copy from:** Cell 13 in `notebooks/main.ipynb`
 - **How to insert:** Right-click visual → Copy → Paste into slide
 
 ---
@@ -66,7 +66,7 @@
 **Use:** Scenario 2 Visual 3 - Production Run Success Rate
 - **What it shows:** Line chart showing success rate over time with target thresholds
 - **Key message:** Service quality is good (high success rates), not causing decline
-- **Copy from:** Cell 14 in main.ipynb
+- **Copy from:** Cell 14 in `notebooks/main.ipynb`
 - **How to insert:** Right-click visual → Copy → Paste into slide
 
 ---
@@ -75,7 +75,7 @@
 **Use:** Scenario 2 Visual 4 - Customer Health Summary
 - **What it shows:** Summary dashboard with 6 key metrics and overall health status
 - **Key message:** Health score: AT RISK - requires attention but overall trend positive
-- **Copy from:** Cell 15 in main.ipynb
+- **Copy from:** Cell 15 in `notebooks/main.ipynb`
 - **How to insert:** Right-click visual → Copy → Paste into slide
 
 ---

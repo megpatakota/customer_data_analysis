@@ -124,9 +124,12 @@ def visual2_monthly_trend():
                 "SAMPLE_TYPE",
                 lambda s: s.isin(["blood", "saliva"]).sum(),
             ),
+            OTHER_TYPES=(
+                "SAMPLE_TYPE",
+                lambda s: (~s.isin(["blood", "saliva"])).sum(),
+            ),
         )
     )
-    monthly["OTHER_TYPES"] = monthly["TOTAL_SAMPLES"] - monthly["BLOOD_SALIVA"]
     monthly["OVERBILLING_PCT"] = (
         monthly["OTHER_TYPES"]
         .div(monthly["BLOOD_SALIVA"].replace(0, np.nan))
