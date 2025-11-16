@@ -9,21 +9,28 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from ..utils.config import COLORS
+from src.data_processing.data_loader import get_billable_data
 
+billable_live = get_billable_data()
 
-def visual5_time_of_day_patterns(checks_live_finished):
+def visual5_time_of_day_patterns():
     """
     Visual 5: Time of Day Patterns by Sample Type
     
     Shows what time of day different sample types are being processed.
     Helps identify if there are patterns in when bone marrow vs blood/saliva are run.
     
+    NOTE: For Scenario 1 billing analysis, uses BILLABLE samples only:
+    - LIVE environment
+    - OUTCOME = 'finished'
+    - QC_CHECK = 'pass' (excluding missing QC as per decision)
+    
     Why this visual:
     - Reveals temporal patterns in sample processing
     - Helps understand if bone marrow samples run at specific times
     - Can indicate operational patterns or scheduling differences
     """
-    data = checks_live_finished.copy()
+    data = billable_live.copy()
     data['HOUR'] = data['TIMESTAMP'].dt.hour
     
     # Classify sample types
@@ -83,19 +90,24 @@ def visual5_time_of_day_patterns(checks_live_finished):
     plt.show()
 
 
-def visual6_day_of_week_patterns(checks_live_finished):
+def visual6_day_of_week_patterns():
     """
     Visual 6: Day of Week Patterns by Sample Type
     
     Shows what day of week different sample types are being processed.
     Helps identify if there are patterns in when bone marrow vs blood/saliva are run.
     
+    NOTE: For Scenario 1 billing analysis, uses BILLABLE samples only:
+    - LIVE environment
+    - OUTCOME = 'finished'
+    - QC_CHECK = 'pass' (excluding missing QC as per decision)
+    
     Why this visual:
     - Reveals weekly patterns in sample processing
     - Helps understand if bone marrow samples run on specific days
     - Can indicate operational schedules or batch processing patterns
     """
-    data = checks_live_finished.copy()
+    data = billable_live.copy()
     data['DAY_OF_WEEK'] = data['TIMESTAMP'].dt.day_name()
     
     # Classify sample types
@@ -148,7 +160,7 @@ def visual6_day_of_week_patterns(checks_live_finished):
                  fontsize=16, weight="bold", pad=20, color="black")
     ax.set_xticks(x)
     ax.set_xticklabels(daily_pivot.index, rotation=45, ha='right', fontsize=16)
-    ax.legend(loc="upper left", frameon=True, fontsize=16)
+    ax.legend(loc="upper right", frameon=True, fontsize=16)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_linewidth(2)
@@ -160,19 +172,24 @@ def visual6_day_of_week_patterns(checks_live_finished):
     plt.show()
 
 
-def visual7_sample_type_timeline(checks_live_finished):
+def visual7_sample_type_timeline():
     """
     Visual 7: Sample Type Timeline Over Time
     
     Shows when different sample types are being processed over the entire time period.
     Uses sample type as legend to show patterns.
     
+    NOTE: For Scenario 1 billing analysis, uses BILLABLE samples only:
+    - LIVE environment
+    - OUTCOME = 'finished'
+    - QC_CHECK = 'pass' (excluding missing QC as per decision)
+    
     Why this visual:
     - Reveals if bone marrow processing is increasing/decreasing over time
     - Shows relationship between different sample types processing patterns
     - Helps identify trends that might explain the billing issue
     """
-    data = checks_live_finished.copy()
+    data = billable_live.copy()
     data['DATE'] = data['TIMESTAMP'].dt.date
     
     # Classify sample types

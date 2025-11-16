@@ -8,31 +8,44 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from ..utils.config import COLORS
+from src.data_processing.data_loader import get_billable_data
 
+billable_live = get_billable_data()
 
-def visual8_bone_marrow_workflow_investigation(investigation_results):
+def visual8_bone_marrow_workflow_investigation():
     """
     Visual 8: Bone Marrow Workflow Investigation
     
-    Shows which workflows are processing bone marrow and their characteristics.
+    Uses billable_live filtered to SAMPLE_TYPE == "bone marrow" to show:
+    - Top workflows by bone marrow volume
+    - Monthly bone marrow timeline
+    - Workflow type comparison (with vs without bone marrow)
+    - QC distribution comparison (expected to be 'pass' for billable data)
     """
-    if 'workflows_processing_bm' not in investigation_results:
-        print("No bone marrow investigation data available.")
-        return
+    billable_live_bone_marrow = billable_live[billable_live["SAMPLE_TYPE"] == "bone marrow"].copy()
     
-    bm_workflows = investigation_results['workflows_processing_bm'].copy()
+    # Choose a workflow name column available in the data
+    workflow_name_col = "WORKFLOW_NAME_wfs" if "WORKFLOW_NAME_wfs" in billable_live_bone_marrow.columns else (
+        "WORKFLOW_NAME_runs" if "WORKFLOW_NAME_runs" in billable_live_bone_marrow.columns else (
+            "WORKFLOW_NAME" if "WORKFLOW_NAME" in billable_live_bone_marrow.columns else None
+        )
+    )
+    
+    # Aggregate bone marrow counts by workflow
+    bm_workflows = (
+        billable_live_bone_marrow.groupby(workflow_name_col)
+        .size()
+        .reset_index(name="BONE_MARROW_COUNT")
+        .sort_values("BONE_MARROW_COUNT", ascending=False)
+    )
     
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
     
     # 1. Top workflows by bone marrow volume
-    top_workflows = bm_workflows.nlargest(8, 'BONE_MARROW_COUNT').copy()
+    top_workflows = bm_workflows.head(8).copy()
     y_pos = np.arange(len(top_workflows))
     
-    # Use WORKFLOW_NAME column if it exists, otherwise use index
-    if 'WORKFLOW_NAME' in top_workflows.columns:
-        workflow_names = top_workflows['WORKFLOW_NAME'].values
-    else:
-        workflow_names = top_workflows.index.values
+    workflow_names = top_workflows[workflow_name_col].astype(str).values
     
     ax1.barh(y_pos, top_workflows['BONE_MARROW_COUNT'], color=COLORS['danger'], edgecolor='white', linewidth=1.5)
     ax1.set_yticks(y_pos)
@@ -51,29 +64,41 @@ def visual8_bone_marrow_workflow_investigation(investigation_results):
                 va="center", fontsize=16, weight="bold", color="black")
     
     # 2. Bone marrow timeline
-    if 'bm_timeline' in investigation_results:
-        bm_timeline = investigation_results['bm_timeline']
-        bm_timeline.index = bm_timeline.index.astype(str)
-        
-        ax2.bar(range(len(bm_timeline)), bm_timeline.values, color=COLORS['danger'], edgecolor='white', linewidth=1.5)
-        ax2.set_xticks(range(len(bm_timeline)))
-        ax2.set_xticklabels(bm_timeline.index, rotation=45, ha='right', fontsize=16)
-        ax2.set_ylabel("Bone Marrow Samples", fontsize=16, weight="bold", color="black")
-        ax2.set_xlabel("Month", fontsize=16, weight="bold", color="black")
-        ax2.set_title("Bone Marrow Processing Timeline", fontsize=16, weight="bold", color="black")
-        ax2.spines['top'].set_visible(False)
-        ax2.spines['right'].set_visible(False)
-        ax2.set_axisbelow(True)
-        ax2.grid(True, which='major', axis='y', alpha=0.5, color='#cccccc', linewidth=1.0, linestyle='-', zorder=0)
+    if "TIMESTAMP" in billable_live_bone_marrow.columns:
+        bm_timeline = (
+            billable_live_bone_marrow.assign(YEAR_MONTH=billable_live_bone_marrow["TIMESTAMP"].dt.to_period("M"))
+            .groupby("YEAR_MONTH")
+            .size()
+            .sort_index()
+        )
+        if len(bm_timeline) > 0:
+            bm_timeline.index = bm_timeline.index.astype(str)
+            ax2.bar(range(len(bm_timeline)), bm_timeline.values, color=COLORS['danger'], edgecolor='white', linewidth=1.5)
+            ax2.set_xticks(range(len(bm_timeline)))
+            ax2.set_xticklabels(bm_timeline.index, rotation=45, ha='right', fontsize=16)
+            ax2.set_ylabel("Bone Marrow Samples", fontsize=16, weight="bold", color="black")
+            ax2.set_xlabel("Month", fontsize=16, weight="bold", color="black")
+            ax2.set_title("Bone Marrow Processing Timeline", fontsize=16, weight="bold", color="black")
+            ax2.spines['top'].set_visible(False)
+            ax2.spines['right'].set_visible(False)
+            ax2.set_axisbelow(True)
+            ax2.grid(True, which='major', axis='y', alpha=0.5, color='#cccccc', linewidth=1.0, linestyle='-', zorder=0)
+        else:
+            ax2.text(0.5, 0.5, "No timeline data", ha="center", va="center", fontsize=16, transform=ax2.transAxes)
+            ax2.axis("off")
+    else:
+        ax2.text(0.5, 0.5, "No TIMESTAMP column available", ha="center", va="center", fontsize=16, transform=ax2.transAxes)
+        ax2.axis("off")
     
     # 3. Workflow type comparison
-    if 'bm_workflow_types' in investigation_results and 'non_bm_workflow_types' in investigation_results:
-        bm_types = investigation_results['bm_workflow_types']
-        non_bm_types = investigation_results['non_bm_workflow_types']
+    if "WORKFLOW_TYPE" in billable_live.columns:
+        bm_types = billable_live_bone_marrow["WORKFLOW_TYPE"].value_counts()
+        non_bm = billable_live[billable_live["SAMPLE_TYPE"] != "bone marrow"]
+        non_bm_types = non_bm["WORKFLOW_TYPE"].value_counts()
         
-        all_types = set(bm_types.index) | set(non_bm_types.index)
-        bm_counts = [bm_types.get(t, 0) for t in all_types]
-        non_bm_counts = [non_bm_types.get(t, 0) for t in all_types]
+        all_types = sorted(set(bm_types.index) | set(non_bm_types.index))
+        bm_counts = [int(bm_types.get(t, 0)) for t in all_types]
+        non_bm_counts = [int(non_bm_types.get(t, 0)) for t in all_types]
         
         x = np.arange(len(all_types))
         width = 0.35
@@ -89,22 +114,25 @@ def visual8_bone_marrow_workflow_investigation(investigation_results):
         ax3.spines['right'].set_visible(False)
         ax3.set_axisbelow(True)
         ax3.grid(True, which='major', axis='y', alpha=0.5, color='#cccccc', linewidth=1.0, linestyle='-', zorder=0)
+    else:
+        ax3.text(0.5, 0.5, "No WORKFLOW_TYPE column available", ha="center", va="center", fontsize=16, transform=ax3.transAxes)
+        ax3.axis("off")
     
     # 4. QC comparison
-    if 'bm_qc_distribution' in investigation_results and 'blood_saliva_qc_distribution' in investigation_results:
-        bm_qc = investigation_results['bm_qc_distribution']
-        bs_qc = investigation_results['blood_saliva_qc_distribution']
+    if "QC_CHECK" in billable_live.columns:
+        bm_qc = billable_live_bone_marrow["QC_CHECK"].value_counts()
+        bs = billable_live[billable_live["SAMPLE_TYPE"].isin(["blood", "saliva"])]
+        bs_qc = bs["QC_CHECK"].value_counts()
         
-        # Calculate percentages
-        bm_qc_pct = (bm_qc / bm_qc.sum() * 100).round(1)
-        bs_qc_pct = (bs_qc / bs_qc.sum() * 100).round(1)
+        bm_qc_pct = (bm_qc / max(bm_qc.sum(), 1) * 100).round(1)
+        bs_qc_pct = (bs_qc / max(bs_qc.sum(), 1) * 100).round(1)
         
-        all_qc = set(bm_qc_pct.index) | set(bs_qc_pct.index)
+        all_qc = sorted(set(bm_qc_pct.index) | set(bs_qc_pct.index))
         x = np.arange(len(all_qc))
         width = 0.35
         
-        bm_vals = [bm_qc_pct.get(qc, 0) for qc in all_qc]
-        bs_vals = [bs_qc_pct.get(qc, 0) for qc in all_qc]
+        bm_vals = [float(bm_qc_pct.get(qc, 0)) for qc in all_qc]
+        bs_vals = [float(bs_qc_pct.get(qc, 0)) for qc in all_qc]
         
         ax4.bar(x - width/2, bm_vals, width, label='Bone Marrow', color=COLORS['danger'], edgecolor='white', linewidth=1.5)
         ax4.bar(x + width/2, bs_vals, width, label='Blood/Saliva', color=COLORS['primary'], edgecolor='white', linewidth=1.5)
@@ -117,6 +145,9 @@ def visual8_bone_marrow_workflow_investigation(investigation_results):
         ax4.spines['right'].set_visible(False)
         ax4.set_axisbelow(True)
         ax4.grid(True, which='major', axis='y', alpha=0.5, color='#cccccc', linewidth=1.0, linestyle='-', zorder=0)
+    else:
+        ax4.text(0.5, 0.5, "No QC_CHECK column available", ha="center", va="center", fontsize=16, transform=ax4.transAxes)
+        ax4.axis("off")
     
     fig.suptitle("Scenario 1: Deep Investigation - Why is Bone Marrow in LIVE Workflows?",
                  fontsize=16, weight="bold", color="black", y=0.995)
@@ -124,16 +155,21 @@ def visual8_bone_marrow_workflow_investigation(investigation_results):
     plt.show()
 
 
-def visual9_workflow_sample_type_matrix(checks_live_success):
+def visual9_workflow_sample_type_matrix():
     """
     Visual 9: Workflow-Sample Type Matrix
     
     Shows which workflows process which sample types - reveals patterns.
+    
+    NOTE: For Scenario 1 billing analysis, uses BILLABLE samples only:
+    - LIVE environment
+    - OUTCOME = 'finished'
+    - QC_CHECK = 'pass' (excluding missing QC as per decision)
     """
     # Create matrix of workflows vs sample types
     workflow_sample_matrix = pd.crosstab(
-        checks_live_success['WORKFLOW_NAME'],
-        checks_live_success['SAMPLE_TYPE'],
+        billable_live['WORKFLOW_NAME_wfs'],
+        billable_live['SAMPLE_TYPE'],
         margins=True
     )
     

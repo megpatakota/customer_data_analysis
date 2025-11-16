@@ -11,19 +11,46 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from ..utils.config import COLORS
 
+from src.data_processing.data_loader import get_billable_data
 
-def visual1_billing_dispute(monthly, billable_live):
+billable_live = get_billable_data()
+
+
+def visual1_billing_dispute():
     """
     Visual 1: The Billing Dispute (Executive Summary)
     
     Shows the core dispute: customer expectation vs actual invoice.
     Highlights the overbilling amount and percentage.
     
+    CRITICAL: Uses billable_live directly to ensure consistency with all other visuals.
+    Creates monthly aggregation internally from billable_live.
+    
     Why this visual:
     - Immediately shows the problem at a glance
     - Clear comparison for stakeholders
     - Sets up the rest of the analysis
     """
+    # Create monthly aggregation from billable_live (consistent with other visuals)
+    billable_live = get_billable_data()
+    monthly = (
+        billable_live.groupby("YEAR_MONTH").agg(
+            TOTAL_SAMPLES=("RUN_ID", "count"),
+            BLOOD_SALIVA=(
+                "SAMPLE_TYPE",
+                lambda s: s.isin(["blood", "saliva"]).sum(),
+            ),
+        )
+    )
+    monthly["OTHER_TYPES"] = monthly["TOTAL_SAMPLES"] - monthly["BLOOD_SALIVA"]
+    monthly["OVERBILLING_PCT"] = (
+        monthly["OTHER_TYPES"]
+        .div(monthly["BLOOD_SALIVA"].replace(0, np.nan))
+        .mul(100)
+        .round(2)
+    )
+    monthly["OVERBILLING_PCT"] = monthly["OVERBILLING_PCT"].fillna(0)
+    
     monthly_plot = monthly.reset_index().copy()
     monthly_plot["YEAR_MONTH_STR"] = monthly_plot["YEAR_MONTH"].astype(str)
     latest_month = monthly_plot["YEAR_MONTH"].max()
@@ -73,21 +100,80 @@ def visual1_billing_dispute(monthly, billable_live):
     plt.show()
 
 
-def visual2_monthly_trend(monthly):
+def visual2_monthly_trend():
     """
     Visual 2: Monthly Billing Trend (Expected vs Actual)
     
     Shows the breakdown of expected vs overbilled samples across all months.
     Highlights the disputed month and shows overbilling percentages.
     
+    CRITICAL: Uses billable_live directly to ensure consistency with all other visuals.
+    Creates monthly aggregation internally from billable_live.
+    
     Why this visual:
     - Demonstrates the issue is systemic, not isolated to one month
     - Shows the trend over time
     - Helps identify if the problem is getting worse
     """
+    # Create monthly aggregation from billable_live (consistent with all visuals)
+    
+    monthly = (
+        billable_live.groupby("YEAR_MONTH").agg(
+            TOTAL_SAMPLES=("RUN_ID", "count"),
+            BLOOD_SALIVA=(
+                "SAMPLE_TYPE",
+                lambda s: s.isin(["blood", "saliva"]).sum(),
+            ),
+        )
+    )
+    monthly["OTHER_TYPES"] = monthly["TOTAL_SAMPLES"] - monthly["BLOOD_SALIVA"]
+    monthly["OVERBILLING_PCT"] = (
+        monthly["OTHER_TYPES"]
+        .div(monthly["BLOOD_SALIVA"].replace(0, np.nan))
+        .mul(100)
+        .round(2)
+    )
+    monthly["OVERBILLING_PCT"] = monthly["OVERBILLING_PCT"].fillna(0)
+    
+    # Ensure monthly is a DataFrame (not Series)
+    if isinstance(monthly, pd.Series):
+        monthly = monthly.to_frame().T
+    
+    # CRITICAL: The monthly dataframe comes from groupby("YEAR_MONTH"), so the index is a PeriodIndex
+    # Reset index to convert PeriodIndex to a column
+    # When reset_index() is called on a DataFrame with a PeriodIndex, it creates a column with the index values
     monthly_plot = monthly.reset_index().copy()
+    
+    # Ensure we're working with all months (no filtering) - CRITICAL: Don't filter!
+    # Sort by YEAR_MONTH to ensure chronological order
+    monthly_plot = monthly_plot.sort_values("YEAR_MONTH").reset_index(drop=True)
+    
+    # Ensure all required columns exist
+    required_cols = ["TOTAL_SAMPLES", "BLOOD_SALIVA", "OTHER_TYPES", "OVERBILLING_PCT"]
+    missing_cols = [col for col in required_cols if col not in monthly_plot.columns]
+    if missing_cols:
+        raise ValueError(f"ERROR: Missing required columns in monthly dataframe: {missing_cols}")
+    
+    # Convert to string for display
     monthly_plot["YEAR_MONTH_STR"] = monthly_plot["YEAR_MONTH"].astype(str)
     latest_month = monthly_plot["YEAR_MONTH"].max()
+    
+    # Validate we have data
+    if len(monthly_plot) == 0:
+        raise ValueError("ERROR: monthly dataframe is empty. Cannot create visual.")
+    
+    # Ensure we're plotting ALL months - no filtering!
+    # The monthly dataframe should contain all months from billable_live
+    # Print info for debugging
+    num_months = len(monthly_plot)
+    if num_months == 0:
+        raise ValueError("ERROR: Monthly dataframe is empty. Cannot create visual.")
+    elif num_months == 1:
+        print(f"WARNING: Only {num_months} month in monthly data. Expected multiple months.")
+        print(f"  Month: {monthly_plot['YEAR_MONTH_STR'].iloc[0]}")
+        print("  This might indicate that billable_live only has data from one month.")
+    else:
+        print(f"[OK] Plotting {num_months} months: {', '.join(monthly_plot['YEAR_MONTH_STR'].tolist())}")
     
     fig, ax = plt.subplots(figsize=(14, 8))
     x_pos = np.arange(len(monthly_plot))
@@ -140,7 +226,7 @@ def visual2_monthly_trend(monthly):
     plt.show()
 
 
-def visual3_sample_types(billable_live):
+def visual3_sample_types():
     """
     Visual 3: Sample Type Breakdown
     
@@ -152,6 +238,7 @@ def visual3_sample_types(billable_live):
     - Shows the magnitude of each category
     - Helps understand the composition of the billing issue
     """
+    billable_live = get_billable_data()
     sample_counts = billable_live["SAMPLE_TYPE"].value_counts()
     
     blood = sample_counts.get("blood", 0)
@@ -221,7 +308,7 @@ def visual3_sample_types(billable_live):
     plt.show()
 
 
-def visual4_root_cause(billable_live):
+def visual4_root_cause():
     """
     Visual 4: Root Cause Analysis - Top Workflows Processing Bone Marrow
     
@@ -233,13 +320,14 @@ def visual4_root_cause(billable_live):
     - Shows the concentration of the problem
     - Helps prioritize workflow reviews
     """
+    billable_live = get_billable_data()
     bm_data = billable_live[billable_live["SAMPLE_TYPE"] == "bone marrow"]
     
     if len(bm_data) == 0:
         print("No bone marrow samples found in billable data.")
         return
     
-    top_workflows = bm_data["WORKFLOW_NAME"].value_counts().head(8).sort_values()
+    top_workflows = bm_data["WORKFLOW_NAME_wfs"].value_counts().head(8).sort_values()
     
     fig, ax = plt.subplots(figsize=(14, 8))
     
