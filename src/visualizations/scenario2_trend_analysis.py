@@ -22,10 +22,15 @@ def visual5_workflow_creation_trends(df):
     - Reveals if new workflows are being introduced
     - Shows workflow lifecycle patterns
     - Can indicate platform expansion or changes
-    """    
     
-    df['DATE'] = df['WORKFLOW_TIMESTAMP'].dt.date
-    daily_workflows = df.groupby('DATE').size().reset_index(name='WORKFLOWS_CREATED')
+    Args:
+        df: Merged dataframe - will be filtered to LIVE workflows only
+    """
+    # Filter to LIVE workflows only
+    df_live = df[df["ENVIRONMENT_wfs"] == "live"].copy() if "ENVIRONMENT_wfs" in df.columns else df.copy()
+    
+    df_live['DATE'] = df_live['WORKFLOW_TIMESTAMP'].dt.date
+    daily_workflows = df_live.groupby('DATE').size().reset_index(name='WORKFLOWS_CREATED')
     daily_workflows['DATE'] = pd.to_datetime(daily_workflows['DATE'])
     
     fig, ax = plt.subplots(figsize=(14, 8))
@@ -60,12 +65,18 @@ def visual6_run_duration_analysis(df):
     - Reveals operational efficiency trends
     - Long run times might indicate problems
     - Can explain usage declines if runs are taking longer
-    """
-    # Calculate duration in hours
-    df['DURATION_HOURS'] = (df['STOP_TIME'] - df['START_TIME']).dt.total_seconds() / 3600
     
-    df['DATE'] = df['START_TIME'].dt.date
-    daily_durations = df.groupby('DATE').agg(
+    Args:
+        df: Merged dataframe - will be filtered to LIVE runs only
+    """
+    # Filter to LIVE runs only
+    df_live = df[df["ENVIRONMENT_runs"] == "live"].copy() if "ENVIRONMENT_runs" in df.columns else df.copy()
+    
+    # Calculate duration in hours
+    df_live['DURATION_HOURS'] = (df_live['STOP_TIME'] - df_live['START_TIME']).dt.total_seconds() / 3600
+    
+    df_live['DATE'] = df_live['START_TIME'].dt.date
+    daily_durations = df_live.groupby('DATE').agg(
         AVG_DURATION=('DURATION_HOURS', 'mean'),
         MEDIAN_DURATION=('DURATION_HOURS', 'median'),
         COUNT=('RUN_ID', 'count')

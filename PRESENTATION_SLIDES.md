@@ -650,12 +650,13 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 **Visual:** Scenario 2 Visual 3 - Production Run Success Rate
 
-**Data Used:** `df` (merged dataframe) - Contains `OUTCOME` from Runs table for all LIVE runs
+**Data Used:** `df` (merged dataframe with all data) - Function filters internally to LIVE runs only
 
 **Why This Data:**
 - Run outcomes (finished, failed, canceled) indicate operational quality
 - Success rate is a key indicator of customer satisfaction and service reliability
 - Separate from usage trends - measures service quality independently
+- Function receives full merged dataframe and filters to `ENVIRONMENT_runs == "live"` internally
 
 **Success Rate Metrics:**
 - Latest success rate: 75.0%
@@ -736,12 +737,13 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 **Visual:** Scenario 2 Visual 5 - Workflow Creation Trends
 
-**Data Used:** `df_wfs` (Workflows table) and `df_runs` (Runs table) - All workflows and runs data
+**Data Used:** `df` (merged dataframe with all data) - Function filters internally to LIVE workflows only
 
 **Why This Data:**
 - Workflow creation timestamps (`WORKFLOW_TIMESTAMP`) show when new capabilities were added
 - Correlating workflow creation with usage changes reveals if new workflows drive usage growth
 - Helps understand platform expansion and customer adoption patterns
+- Function receives full merged dataframe and filters to `ENVIRONMENT_wfs == "live"` internally
 
 **What We're Analyzing:**
 - When were live workflows created (WORKFLOW_TIMESTAMP)?
@@ -761,12 +763,13 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 **Visual:** Scenario 2 Visual 6 - Run Duration Trends
 
-**Data Used:** `df` (merged dataframe) - Contains `START_TIME` and `STOP_TIME` from Runs table
+**Data Used:** `df` (merged dataframe with all data) - Function filters internally to LIVE runs only
 
 **Why This Data:**
 - Run duration (STOP_TIME - START_TIME) indicates operational efficiency
 - Longer run times might indicate performance issues that could affect customer satisfaction
 - Changes in run duration over time reveal operational health trends
+- Function receives full merged dataframe and filters to `ENVIRONMENT_runs == "live"` internally
 
 **What We're Analyzing:**
 - How long do runs take (START_TIME to STOP_TIME)?
@@ -890,12 +893,13 @@ Using industry-standard customer success metrics to assess customer health:
 
 **Visual:** Scenario 2 Visual 10 - Churn Risk Timeline
 
-**Data Used:** `df` (merged dataframe) for usage trends and `health_metrics` for risk indicators
+**Data Used:** `df` (merged dataframe with all data) - Function filters internally to LIVE runs only; `health_metrics` for risk indicators
 
 **Why This Data:**
 - Monthly usage trends from merged dataframe show actual customer activity
 - Health metrics provide risk level context for each period
 - Timeline view reveals when risk increased/decreased over time
+- Function receives full merged dataframe and filters to `ENVIRONMENT_runs == "live"` internally
 
 **What We're Analyzing:**
 - Usage trends over time with churn risk markers

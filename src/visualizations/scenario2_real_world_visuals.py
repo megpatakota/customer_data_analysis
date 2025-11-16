@@ -136,8 +136,15 @@ def visual10_churn_risk_timeline(df,health_metrics):
     Visual 10: Churn Risk Timeline
     
     Shows usage trends with churn risk indicators.
-    """    
-    monthly = df.groupby("YEAR_MONTH").agg(
+    
+    Args:
+        df: Merged dataframe - will be filtered to LIVE runs only
+        health_metrics: Dictionary of health metrics
+    """
+    # Filter to LIVE runs only
+    df_live = df[df["ENVIRONMENT_runs"] == "live"].copy() if "ENVIRONMENT_runs" in df.columns else df.copy()
+    
+    monthly = df_live.groupby("YEAR_MONTH").agg(
         SAMPLES=("RUN_ID", "count")
     ).sort_index()
     monthly["MOM_CHANGE"] = monthly["SAMPLES"].pct_change() * 100

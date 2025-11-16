@@ -183,9 +183,14 @@ def visual3_success_rate(df):
     - Separates operational quality from usage trends
     - High success rate indicates good service delivery
     - Low success rate could explain usage decline
-    """
     
-    success_monthly = df.groupby("YEAR_MONTH").agg(
+    Args:
+        df: Merged dataframe - will be filtered to LIVE runs only
+    """
+    # Filter to LIVE runs only
+    df_live = df[df["ENVIRONMENT_runs"] == "live"].copy()
+    
+    success_monthly = df_live.groupby("YEAR_MONTH").agg(
         # df (from data_loader) uses RUN_ID as the run identifier, not ID
         TOTAL_RUNS=("RUN_ID", "count"),
         FINISHED=("OUTCOME", lambda s: (s == "finished").sum()),
@@ -249,8 +254,14 @@ def visual4_health_summary(df):
     - Combines multiple metrics into actionable insight
     - Clear visual indication of risk level
     - Uses all samples (not just pass QC) to reflect actual customer usage
+    
+    Args:
+        df: Merged dataframe - will be filtered to LIVE runs only for success rate calculations
+            Note: For usage metrics, should pass usage_live (already filtered) instead of df
     """
     # Calculate metrics
+    # Note: df should already be filtered to LIVE samples for usage, but we filter for success rate
+    df_live = df[df["ENVIRONMENT_runs"] == "live"].copy() if "ENVIRONMENT_runs" in df.columns else df.copy()
     
     usage_monthly = (
         df.groupby("YEAR_MONTH").agg(
@@ -259,8 +270,8 @@ def visual4_health_summary(df):
     )
     usage_monthly["MOM_CHANGE_PCT"] = usage_monthly["SAMPLES_PROCESSED"].pct_change() * 100
     
-    df["YEAR_MONTH"] = df["START_TIME"].dt.to_period("M")
-    success_monthly = df.groupby("YEAR_MONTH").agg(
+    df_live["YEAR_MONTH"] = df_live["START_TIME"].dt.to_period("M")
+    success_monthly = df_live.groupby("YEAR_MONTH").agg(
         # df (from data_loader) uses RUN_ID as the run identifier, not ID
         TOTAL_RUNS=("RUN_ID", "count"),
         FINISHED=("OUTCOME", lambda s: (s == "finished").sum()),
