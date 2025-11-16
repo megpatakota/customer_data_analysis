@@ -9,8 +9,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from ..utils.config import COLORS
-from src.data_processing.data_loader import get_billable_data
-billable_live = get_billable_data()
 
 def visual9_customer_health_dashboard(health_metrics):
     """
@@ -25,7 +23,7 @@ def visual9_customer_health_dashboard(health_metrics):
     ax1 = fig.add_subplot(gs[0, 0])
     risk_level = health_metrics['churn_risk']['risk_level']
     risk_colors = {'HIGH': COLORS['danger'], 'MEDIUM': COLORS['warning'], 'LOW': COLORS['success']}
-    risk_color = risk_colors.get(risk_level, COLORS['neutral'])
+    risk_color = risk_colors[risk_level]
     
     ax1.text(0.5, 0.6, risk_level, ha='center', va='center', fontsize=16, weight='bold',
             color=risk_color, transform=ax1.transAxes)
@@ -40,35 +38,29 @@ def visual9_customer_health_dashboard(health_metrics):
     # 2. Growth Velocity (Top Middle)
     ax2 = fig.add_subplot(gs[0, 1])
     growth = health_metrics['growth']
-    if growth['recent_growth_pct'] is not None:
-        growth_val = growth['recent_growth_pct']
-        growth_color = COLORS['success'] if growth_val > 0 else COLORS['danger'] if growth_val < -10 else COLORS['warning']
-        ax2.text(0.5, 0.6, f"{growth_val:+.1f}%", ha='center', va='center', fontsize=16, weight='bold',
-                color=growth_color, transform=ax2.transAxes)
-        ax2.text(0.5, 0.3, 'RECENT GROWTH', ha='center', va='center', fontsize=16, weight='bold',
-                color='black', transform=ax2.transAxes)
-        ax2.text(0.5, 0.1, growth['growth_trajectory'], ha='center', va='center', fontsize=16,
-                color='black', transform=ax2.transAxes)
-    else:
-        ax2.text(0.5, 0.5, 'INSUFFICIENT\nDATA', ha='center', va='center', fontsize=16, weight='bold',
-                color=COLORS['neutral'], transform=ax2.transAxes)
+    growth_val = growth['recent_growth_pct'] if growth['recent_growth_pct'] is not None else 0
+    growth_color = COLORS['success'] if growth_val > 0 else COLORS['danger'] if growth_val < -10 else COLORS['warning']
+    ax2.text(0.5, 0.6, f"{growth_val:+.1f}%" if growth['recent_growth_pct'] is not None else 'N/A', 
+            ha='center', va='center', fontsize=16, weight='bold',
+            color=growth_color, transform=ax2.transAxes)
+    ax2.text(0.5, 0.3, 'RECENT GROWTH', ha='center', va='center', fontsize=16, weight='bold',
+            color='black', transform=ax2.transAxes)
+    ax2.text(0.5, 0.1, growth['growth_trajectory'], ha='center', va='center', fontsize=16,
+            color='black', transform=ax2.transAxes)
     ax2.axis('off')
     
     # 3. Operational Health (Top Right)
     ax3 = fig.add_subplot(gs[0, 2])
     op_health = health_metrics['operational_health']
-    if op_health['latest_success_rate'] is not None:
-        success_rate = op_health['latest_success_rate']
-        success_color = COLORS['success'] if success_rate >= 90 else COLORS['warning'] if success_rate >= 80 else COLORS['danger']
-        ax3.text(0.5, 0.6, f"{success_rate:.1f}%", ha='center', va='center', fontsize=16, weight='bold',
-                color=success_color, transform=ax3.transAxes)
-        ax3.text(0.5, 0.3, 'SUCCESS RATE', ha='center', va='center', fontsize=16, weight='bold',
-                color='black', transform=ax3.transAxes)
-        ax3.text(0.5, 0.1, op_health['operational_status'], ha='center', va='center', fontsize=16,
-                color='black', transform=ax3.transAxes)
-    else:
-        ax3.text(0.5, 0.5, 'NO DATA', ha='center', va='center', fontsize=16, weight='bold',
-                color=COLORS['neutral'], transform=ax3.transAxes)
+    success_rate = op_health['latest_success_rate'] if op_health['latest_success_rate'] is not None else op_health['avg_success_rate']
+    success_rate = success_rate if success_rate is not None and not pd.isna(success_rate) else 0
+    success_color = COLORS['success'] if success_rate >= 90 else COLORS['warning'] if success_rate >= 80 else COLORS['danger']
+    ax3.text(0.5, 0.6, f"{success_rate:.1f}%", ha='center', va='center', fontsize=16, weight='bold',
+            color=success_color, transform=ax3.transAxes)
+    ax3.text(0.5, 0.3, 'SUCCESS RATE', ha='center', va='center', fontsize=16, weight='bold',
+            color='black', transform=ax3.transAxes)
+    ax3.text(0.5, 0.1, op_health['operational_status'], ha='center', va='center', fontsize=16,
+            color='black', transform=ax3.transAxes)
     ax3.axis('off')
     
     # 4. Engagement Metrics (Middle Left)
@@ -106,30 +98,21 @@ def visual9_customer_health_dashboard(health_metrics):
     # 6. Platform Maturity (Middle Right)
     ax6 = fig.add_subplot(gs[1, 2])
     maturity = health_metrics['maturity']
-    if maturity['avg_workflow_age_days'] is not None:
-        age_days = maturity['avg_workflow_age_days']
-        maturity_levels = ['New\n(<30 days)', 'Growing\n(30-90 days)', 'Mature\n(>90 days)']
-        maturity_counts = [
-            maturity['new_workflows_count'],
-            maturity['established_workflows_count'] - len([x for x in [maturity['new_workflows_count']] if x > 0]),
-            len([x for x in [maturity['established_workflows_count']] if x > 0])
-        ]
-        # Simplified for visualization
-        ax6.pie([maturity['new_workflows_count'], maturity['established_workflows_count']],
-               labels=['New', 'Established'], autopct='%1.0f', startangle=90,
-               colors=[COLORS['warning'], COLORS['success']])
-        ax6.set_title("Platform Maturity", fontsize=16, weight="bold", color="black")
-    else:
-        ax6.text(0.5, 0.5, 'NO DATA', ha='center', va='center', fontsize=16, weight='bold',
-                color=COLORS['neutral'], transform=ax6.transAxes)
-        ax6.axis('off')
+    ax6.pie([maturity['new_workflows_count'], maturity['established_workflows_count']],
+           labels=['New', 'Established'], autopct='%1.0f', startangle=90,
+           colors=[COLORS['warning'], COLORS['success']])
+    ax6.set_title("Platform Maturity", fontsize=16, weight="bold", color="black")
     
     # 7. Key Metrics Summary (Bottom - Full Width)
     ax7 = fig.add_subplot(gs[2, :])
     ax7.axis('off')
     
-    recent_growth = f"{health_metrics['growth']['recent_growth_pct']:+.1f}%" if health_metrics['growth']['recent_growth_pct'] is not None else 'N/A'
-    success_rate = f"{health_metrics['operational_health']['latest_success_rate']:.1f}%" if health_metrics['operational_health']['latest_success_rate'] is not None else 'N/A'
+    growth = health_metrics['growth']
+    op_health = health_metrics['operational_health']
+    recent_growth = f"{growth['recent_growth_pct']:+.1f}%" if growth['recent_growth_pct'] is not None else 'N/A'
+    success_rate_val = op_health['latest_success_rate'] if op_health['latest_success_rate'] is not None else op_health['avg_success_rate']
+    success_rate_val = success_rate_val if success_rate_val is not None and not pd.isna(success_rate_val) else 0
+    success_rate = f"{success_rate_val:.1f}%"
     
     metrics_text = f"""
     CHURN RISK: {health_metrics['churn_risk']['risk_level']} | 
@@ -148,15 +131,13 @@ def visual9_customer_health_dashboard(health_metrics):
     plt.show()
 
 
-def visual10_churn_risk_timeline(health_metrics):
+def visual10_churn_risk_timeline(df,health_metrics):
     """
     Visual 10: Churn Risk Timeline
     
     Shows usage trends with churn risk indicators.
-    """
-    usage_live_copy = billable_live
-    
-    monthly = usage_live_copy.groupby("YEAR_MONTH").agg(
+    """    
+    monthly = df.groupby("YEAR_MONTH").agg(
         SAMPLES=("RUN_ID", "count")
     ).sort_index()
     monthly["MOM_CHANGE"] = monthly["SAMPLES"].pct_change() * 100

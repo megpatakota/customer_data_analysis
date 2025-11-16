@@ -8,9 +8,13 @@ import pandas as pd
 import numpy as np
 
 
-def calculate_customer_health_metrics(usage_live, df_runs, df_wfs):
+def calculate_customer_health_metrics(usage_live, df):
     """
     Calculates comprehensive real-world customer health metrics.
+    
+    Args:
+        usage_live: Filtered dataframe with LIVE + finished samples (from merged df)
+        df: Full merged dataframe (from final_merge()) containing all runs, workflows, and checks
     
     Metrics include:
     1. Churn Risk Indicators
@@ -22,16 +26,21 @@ def calculate_customer_health_metrics(usage_live, df_runs, df_wfs):
     """
     metrics = {}
     
-    # Prepare data
+    # Prepare data - use WORKFLOW_NAME_wfs as the canonical workflow name
     usage_live_copy = usage_live.copy()
-    usage_live_copy["YEAR_MONTH"] = usage_live_copy["TIMESTAMP"].dt.to_period("M")
+    usage_live_copy["WORKFLOW_NAME"] = usage_live_copy["WORKFLOW_NAME_wfs"]
     
-    runs_live = df_runs[df_runs["ENVIRONMENT"] == "live"].copy()
+    # Get runs_live from merged df (filter for LIVE runs, then deduplicate by RUN_ID)
+    runs_live = df[df["ENVIRONMENT_runs"] == "live"].copy()
+    runs_live = runs_live.drop_duplicates(subset=["RUN_ID"])
     runs_live["YEAR_MONTH"] = runs_live["START_TIME"].dt.to_period("M")
     
-    wfs_live = df_wfs[df_wfs["ENVIRONMENT"] == "live"].copy()
+    # Get wfs_live from merged df (filter for LIVE workflows, then deduplicate by WORKFLOW_ID)
+    wfs_live = df[df["ENVIRONMENT_wfs"] == "live"].copy()
+    wfs_live = wfs_live.drop_duplicates(subset=["WORKFLOW_ID"])
     
     # 1. CHURN RISK INDICATORS
+    
     usage_monthly = usage_live_copy.groupby("YEAR_MONTH").agg(
         SAMPLES=("RUN_ID", "count"),
         UNIQUE_RUNS=("RUN_ID", "nunique"),
@@ -144,9 +153,9 @@ def calculate_customer_health_metrics(usage_live, df_runs, df_wfs):
     wfs_live_copy = wfs_live.copy()
     wfs_live_copy["WORKFLOW_AGE_DAYS"] = (pd.Timestamp.now() - wfs_live_copy["WORKFLOW_TIMESTAMP"]).dt.days
     
-    # Active workflows age
+    # Active workflows age - match by workflow name
     active_wf_names = usage_live_copy["WORKFLOW_NAME"].unique()
-    active_wfs_metadata = wfs_live_copy[wfs_live_copy["WORKFLOW_NAME"].isin(active_wf_names)]
+    active_wfs_metadata = wfs_live_copy[wfs_live_copy["WORKFLOW_NAME_wfs"].isin(active_wf_names)]
     
     avg_workflow_age = active_wfs_metadata["WORKFLOW_AGE_DAYS"].mean() if not active_wfs_metadata.empty else None
     new_workflows_count = len(active_wfs_metadata[active_wfs_metadata["WORKFLOW_AGE_DAYS"] < 30]) if not active_wfs_metadata.empty else 0

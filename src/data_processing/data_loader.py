@@ -55,7 +55,10 @@ def data_load_clean():
     df_checks["TIMESTAMP"] = pd.to_datetime(df_checks["TIMESTAMP"])
     df_checks["YEAR_MONTH"] = df_checks["TIMESTAMP"].dt.to_period("M")
     df_wfs["WORKFLOW_TIMESTAMP"] = pd.to_datetime(df_wfs["WORKFLOW_TIMESTAMP"])
+    df_wfs['DATE'] = df_wfs['WORKFLOW_TIMESTAMP'].dt.date
+    
     df_runs["START_TIME"] = pd.to_datetime(df_runs["START_TIME"])
+    df_runs['DAY_OF_WEEK'] = df_runs['START_TIME'].dt.day_name()
     df_runs["STOP_TIME"] = pd.to_datetime(df_runs["STOP_TIME"])
     df_runs.rename(
         columns={"WORKFLOW_ID": "WORKFLOW_ID_LONG", "ID": "RUN_ID"}, inplace=True
@@ -140,9 +143,9 @@ def get_billable_data():
 
     return df_billable
 
-def get_usage_data():
+def get_usage_live_data():
     """
-    Creates a subset of USAGE data (Scenario 2) from the main datasets.
+    Filters by fields in df_runs
 
     Usage samples must meet two criteria:
     1. LIVE environment only

@@ -190,15 +190,16 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 **Customer Health Assessment Approach:**
 
-**1. Reuses Scenario 1 Definition:**
-- **Base Dataset:** `billable_live` from Scenario 1
-- **Rationale:** Customer health should measure actual production usage
-- **Consistency:** Same definition ensures comparability
+**1. Usage Data Definition (Different from Scenario 1):**
+- **Base Dataset:** `usage_live` - All samples from finished LIVE runs (regardless of QC status)
+- **Rationale:** For customer health, we need to track ALL processing activity, not just billable samples
+- **Why:** Captures complete customer usage patterns including samples that may have failed QC
+- **Difference from Scenario 1:** Scenario 1 uses billable samples (LIVE + finished + pass QC), Scenario 2 uses all finished LIVE samples
 
 **2. Usage Metrics Calculated:**
-- **Billable Samples:** Count of billable samples per month
+- **All Finished LIVE Samples:** Count of all samples in finished LIVE runs per month
 - **Unique Runs:** Number of distinct production runs per month
-- **Month-over-Month (MoM) Change:** Percentage change in billable samples
+- **Month-over-Month (MoM) Change:** Percentage change in total usage (all samples)
 
 **3. Risk Thresholds:**
 - **>15% Drop:** Flags as significant risk indicator
@@ -212,16 +213,19 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 **5. Success Rate Analysis:**
 - Calculated separately for Scenario 2 Visual 3
+- **Data Used:** All LIVE runs from merged dataframe (`df`)
 - Formula: `(Finished Runs / Total Runs) x 100`
 - Thresholds: 90% target, 80% warning level
 - **Purpose:** Assess operational quality separately from usage trends
 
-**6. Health Score Calculation:**
-- Composite score based on multiple factors:
-  - Recent month-over-month change (-40 points if <-15%)
-  - Success rate (-30 points if <80%)
-  - 3-month trend (-30 points if declining >10%)
-- Scale: 0-100 (100 = healthy, <50 = at risk)
+**6. Comprehensive Health Metrics:**
+- Real-world customer success metrics calculated from `usage_live` and `df`:
+  - Churn Risk Indicators (consecutive declines, risk level)
+  - Engagement Metrics (workflow utilization, diversity)
+  - Growth Velocity (acceleration/deceleration)
+  - Operational Health (success rates, status)
+  - Usage Concentration (dependency on top workflows)
+  - Platform Maturity (new vs established workflows)
 
 ---
 
@@ -580,15 +584,22 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 **Visual:** Scenario 2 Visual 1 - Customer Usage Trend Over Time
 
+**Data Used:** `usage_live` - All samples from finished LIVE runs (regardless of QC status)
+
+**Why This Data:**
+- For customer health assessment, we track ALL processing activity, not just billable samples
+- Captures complete customer usage patterns including samples that may have failed QC
+- Provides comprehensive view of platform engagement and usage trends
+
 **Growth Pattern:**
-- May: 627 samples
-- June: 707 samples (+12.8%)
-- July: 1,255 samples (+77.5%) Peak
-- August: 1,019 samples (-18.8%) **ALERT**
+- May: 684 samples
+- June: 795 samples (+16.2%)
+- July: 1,405 samples (+76.7%) Peak
+- August: 1,173 samples (-16.5%) **ALERT**
 
-**Overall Growth:** 62.5% from May to August
+**Overall Growth:** 71.5% from May to August
 
-**Key Observation:** Strong growth followed by significant drop in August
+**Key Observation:** Strong growth followed by significant drop in August exceeding 15% risk threshold
 
 ---
 
@@ -598,14 +609,22 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 **Visual:** Scenario 2 Visual 2 - Month-over-Month Growth Rate
 
+**Data Used:** `usage_live` - All samples from finished LIVE runs (regardless of QC status)
+
+**Why This Data:**
+- Month-over-month changes in total usage provide early warning signals
+- Includes all processing activity to capture complete customer engagement
+- Helps identify volatility and growth acceleration/deceleration patterns
+
 **Growth/Decline Pattern:**
-- June: +12.8% growth
-- July: +77.5% growth (strong expansion)
-- August: -18.8% decline (significant drop - exceeds 15% threshold)
+- June: +16.2% growth
+- July: +76.7% growth (strong expansion)
+- August: -16.5% decline (significant drop - exceeds 15% threshold)
 
 **Risk Indicators:**
 - Single month decline >15% triggers risk flag
 - Pattern suggests possible seasonal variation OR customer reducing usage
+- Color-coded visualization highlights risk periods (red) and growth periods (green)
 - Need to monitor next month closely
 
 ---
@@ -616,15 +635,25 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 **Visual:** Scenario 2 Visual 3 - Production Run Success Rate
 
+**Data Used:** `df` (merged dataframe) - Contains `OUTCOME` from Runs table for all LIVE runs
+
+**Why This Data:**
+- Run outcomes (finished, failed, canceled) indicate operational quality
+- Success rate is a key indicator of customer satisfaction and service reliability
+- Separate from usage trends - measures service quality independently
+
 **Success Rate Metrics:**
-- Average success rate: [X]%
+- Latest success rate: 75.0%
+- Average success rate: 62.0%
 - Target: 90%
 - Warning threshold: 80%
+- Operational Status: CRITICAL
 
 **Key Points:**
-- Service reliability is [GOOD/NEEDS IMPROVEMENT]
-- High success rate indicates customer satisfaction with service quality
-- Not a factor in usage decline
+- Service reliability needs improvement (below 80% threshold)
+- Low success rate indicates potential operational issues
+- This is separate from usage trends - measures service quality independently
+- Low success rate can indicate customer dissatisfaction even if usage is high
 
 ---
 
@@ -634,16 +663,23 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 **Visual:** Scenario 2 Visual 4 - Customer Health Scorecard
 
+**Data Used:** `usage_live` (all finished LIVE samples) and `df` (merged dataframe for run outcomes)
+
+**Why This Data:**
+- Combines usage trends with operational quality metrics
+- Provides composite health score for at-a-glance assessment
+- Uses both usage volume and service quality to assess overall health
+
 **Key Metrics:**
-- Current Month Usage: [X] samples
-- Month-over-Month: -18.8% (Decline)
-- 3-Month Trend: [X]% (Still positive overall)
-- Success Rate: [X]%
-- Overall Growth: +62.5% (Since May)
+- Current Month Usage: 1,173 samples
+- Month-over-Month: -16.5% (Decline)
+- 3-Month Trend: +17.0% (Still positive overall)
+- Success Rate: 75.0% (Latest)
+- Overall Growth: +71.5% (Since May)
 
-**Health Score: [X]/100 - AT RISK**
+**Health Score: Composite score based on multiple factors**
 
-**Status:** Requires monitoring and proactive engagement
+**Status:** AT RISK - Requires monitoring and proactive engagement
 
 ---
 
@@ -671,6 +707,13 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 **Visual:** Scenario 2 Visual 5 - Workflow Creation Trends
 
+**Data Used:** `df_wfs` (Workflows table) and `df_runs` (Runs table) - All workflows and runs data
+
+**Why This Data:**
+- Workflow creation timestamps (`WORKFLOW_TIMESTAMP`) show when new capabilities were added
+- Correlating workflow creation with usage changes reveals if new workflows drive usage growth
+- Helps understand platform expansion and customer adoption patterns
+
 **What We're Analyzing:**
 - When were live workflows created (WORKFLOW_TIMESTAMP)?
 - Are new workflows being introduced over time?
@@ -680,12 +723,21 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 - New workflows might indicate platform expansion
 - Workflow lifecycle patterns reveal operational changes
 - Helps understand usage trends at a deeper level
+- Spikes in workflow creation = platform expansion period
+- Correlation with usage growth = new workflows driving adoption
 
 ---
 
 ## SLIDE 22A: Run Duration Analysis
 
 **Visual:** Scenario 2 Visual 6 - Run Duration Trends
+
+**Data Used:** `df` (merged dataframe) - Contains `START_TIME` and `STOP_TIME` from Runs table
+
+**Why This Data:**
+- Run duration (STOP_TIME - START_TIME) indicates operational efficiency
+- Longer run times might indicate performance issues that could affect customer satisfaction
+- Changes in run duration over time reveal operational health trends
 
 **What We're Analyzing:**
 - How long do runs take (START_TIME to STOP_TIME)?
@@ -696,12 +748,22 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 - Operational efficiency indicators
 - Long run times might explain usage patterns
 - Performance issues could affect customer satisfaction
+- Increasing duration = potential performance degradation (concerning)
+- Decreasing duration = improving efficiency (positive)
+- Stable duration = consistent operations (good)
 
 ---
 
 ## SLIDE 22B: Daily Usage Patterns
 
 **Visual:** Scenario 2 Visual 7 - Daily Usage Timeline
+
+**Data Used:** `usage_live` - All samples from finished LIVE runs (regardless of QC status)
+
+**Why This Data:**
+- Daily granularity reveals day-to-day operational patterns
+- Includes all processing activity (not just pass QC) to show complete usage
+- Daily timeline shows volatility and identifies operational cycles
 
 **What We're Analyzing:**
 - Daily processing patterns using all samples in LIVE runs
@@ -712,6 +774,9 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 - Shows real customer usage patterns
 - Includes all processing activity (not just pass QC)
 - Reveals day-to-day operational patterns
+- Consistent daily volume = stable operations
+- High volatility = irregular usage patterns
+- Daily patterns reveal operational consistency or variability
 
 ---
 
@@ -719,15 +784,28 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 **Visual:** Scenario 2 Visual 8 - Weekly Usage Patterns
 
+**Data Used:** `usage_live` - All samples from finished LIVE runs (regardless of QC status)
+
+**Why This Data:**
+- Day-of-week patterns reveal weekly operational cycles
+- Shows if customer has consistent weekly schedules or irregular patterns
+- Helps identify business operational patterns (e.g., weekday vs weekend processing)
+
 **What We're Analyzing:**
 - Usage patterns by day of week
 - Weekly operational cycles
 - Business pattern identification
+- Number of production runs by day of week
+- Number of samples processed by day of week
 
 **Why This Matters:**
 - Identifies weekly operational cycles
 - Reveals if certain days have higher/lower usage
 - Shows business operational patterns
+- Consistent across days = regular operations
+- Higher on weekdays = business-hours focused operations
+- Higher on weekends = 24/7 operations or special processing
+- Irregular patterns = ad-hoc or project-based usage
 
 ---
 
@@ -735,37 +813,44 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 **Visual:** Scenario 2 Visual 9 - Customer Health Dashboard
 
+**Data Used:** `health_metrics` - Comprehensive metrics calculated from `usage_live` and `df`
+
+**Why This Data:**
+- Real-world customer success metrics provide actionable insights for account management
+- Combines multiple health dimensions (churn risk, engagement, growth, operational health, concentration, maturity)
+- Industry-standard metrics used by customer success teams
+
 **What We're Measuring:**
 Using industry-standard customer success metrics to assess customer health:
 
 1. **Churn Risk Indicators:**
-   - Consecutive monthly declines: [X] months
-   - Latest MoM change: [X]%
-   - Risk Level: [HIGH/MEDIUM/LOW]
+   - Consecutive monthly declines: 0 months
+   - Latest MoM change: -16.5%
+   - Risk Level: MEDIUM
 
 2. **Engagement Metrics:**
-   - Active Workflows: [X] / Total: [Y]
-   - Workflow Utilization: [X]%
-   - Workflow Diversity Index: [X] (0-1, higher = more diverse)
+   - Active Workflows: 17 / Total: 7
+   - Workflow Utilization: 242.9%
+   - Workflow Diversity Index: 0.719 (0-1, higher = more diverse)
 
 3. **Growth Velocity:**
-   - Recent Growth: [X]%
-   - Overall Growth: [X]%
-   - Growth Trajectory: [ACCELERATING/DECELERATING/STABLE]
+   - Recent Growth: -16.5%
+   - Overall Growth: +71.5%
+   - Growth Trajectory: DECELERATING
 
 4. **Operational Health:**
-   - Success Rate: [X]%
-   - Operational Status: [HEALTHY/WARNING/CRITICAL]
+   - Success Rate: 75.0% (Latest), 62.0% (Average)
+   - Operational Status: CRITICAL
 
 5. **Usage Concentration:**
-   - Top Workflow: [X]% of total usage
-   - Top 3 Workflows: [X]% of total usage
-   - Concentration Risk: [HIGH/MEDIUM/LOW]
+   - Top Workflow: 41.0% of total usage
+   - Top 3 Workflows: 87.5% of total usage
+   - Concentration Risk: MEDIUM
 
 6. **Platform Maturity:**
-   - Average Workflow Age: [X] days
-   - New vs Established Workflows: [X / Y]
-   - Maturity Level: [MATURE/GROWING/NEW]
+   - Average Workflow Age: 130 days
+   - New vs Established Workflows: 0 / 6
+   - Maturity Level: MATURE
 
 ---
 
@@ -773,15 +858,26 @@ Using industry-standard customer success metrics to assess customer health:
 
 **Visual:** Scenario 2 Visual 10 - Churn Risk Timeline
 
+**Data Used:** `df` (merged dataframe) for usage trends and `health_metrics` for risk indicators
+
+**Why This Data:**
+- Monthly usage trends from merged dataframe show actual customer activity
+- Health metrics provide risk level context for each period
+- Timeline view reveals when risk increased/decreased over time
+
 **What We're Analyzing:**
 - Usage trends over time with churn risk markers
-- Highlights concerning periods with significant drops
+- Highlights concerning periods with significant drops (>15% month-over-month)
 - Current risk level indicator
+- Average usage baseline for comparison
 
 **Why This Matters:**
 - Visualizes churn risk progression over time
 - Identifies when risk increased/decreased
 - Provides actionable timeline for customer success team
+- Drops below average = concerning pattern
+- Risk markers (red triangles) = periods exceeding risk threshold
+- Current risk level = overall assessment based on recent trends
 
 ---
 

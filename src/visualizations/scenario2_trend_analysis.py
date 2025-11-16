@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from ..utils.config import COLORS
 
 
-def visual5_workflow_creation_trends(df_wfs, df_runs):
+def visual5_workflow_creation_trends(df):
     """
     Visual 5: Workflow Creation Trends Over Time
     
@@ -22,12 +22,10 @@ def visual5_workflow_creation_trends(df_wfs, df_runs):
     - Reveals if new workflows are being introduced
     - Shows workflow lifecycle patterns
     - Can indicate platform expansion or changes
-    """
-    wfs_live = df_wfs[df_wfs['ENVIRONMENT'] == 'live'].copy()
+    """    
     
-    
-    wfs_live['DATE'] = wfs_live['WORKFLOW_TIMESTAMP'].dt.date
-    daily_workflows = wfs_live.groupby('DATE').size().reset_index(name='WORKFLOWS_CREATED')
+    df['DATE'] = df['WORKFLOW_TIMESTAMP'].dt.date
+    daily_workflows = df.groupby('DATE').size().reset_index(name='WORKFLOWS_CREATED')
     daily_workflows['DATE'] = pd.to_datetime(daily_workflows['DATE'])
     
     fig, ax = plt.subplots(figsize=(14, 8))
@@ -51,7 +49,7 @@ def visual5_workflow_creation_trends(df_wfs, df_runs):
     plt.show()
 
 
-def visual6_run_duration_analysis(df_runs):
+def visual6_run_duration_analysis(df):
     """
     Visual 6: Run Duration Analysis Over Time
     
@@ -63,24 +61,11 @@ def visual6_run_duration_analysis(df_runs):
     - Long run times might indicate problems
     - Can explain usage declines if runs are taking longer
     """
-    runs_live = df_runs[df_runs['ENVIRONMENT'] == 'live'].copy()
-    
-    if runs_live.empty:
-        print("No LIVE runs found.")
-        return
-    
     # Calculate duration in hours
-    runs_live['DURATION_HOURS'] = (runs_live['STOP_TIME'] - runs_live['START_TIME']).dt.total_seconds() / 3600
+    df['DURATION_HOURS'] = (df['STOP_TIME'] - df['START_TIME']).dt.total_seconds() / 3600
     
-    # Filter to finished runs only
-    runs_finished = runs_live[runs_live['OUTCOME'] == 'finished'].copy()
-    
-    if runs_finished.empty:
-        print("No finished LIVE runs found.")
-        return
-    
-    runs_finished['DATE'] = runs_finished['START_TIME'].dt.date
-    daily_durations = runs_finished.groupby('DATE').agg(
+    df['DATE'] = df['START_TIME'].dt.date
+    daily_durations = df.groupby('DATE').agg(
         AVG_DURATION=('DURATION_HOURS', 'mean'),
         MEDIAN_DURATION=('DURATION_HOURS', 'median'),
         COUNT=('RUN_ID', 'count')
@@ -113,7 +98,7 @@ def visual6_run_duration_analysis(df_runs):
     plt.show()
 
 
-def visual7_daily_usage_timeline(checks_live_all):
+def visual7_daily_usage_timeline(df):
     """
     Visual 7: Daily Usage Timeline (All Samples in LIVE Runs)
     
@@ -125,9 +110,7 @@ def visual7_daily_usage_timeline(checks_live_all):
     - Includes all processing activity regardless of QC outcome
     - Reveals daily volatility and patterns
     """
-    data = checks_live_all.copy()
-    data['DATE'] = data['TIMESTAMP'].dt.date
-    daily_counts = data.groupby('DATE').size().reset_index(name='SAMPLES_PROCESSED')
+    daily_counts = df.groupby('DATE').size().reset_index(name='SAMPLES_PROCESSED')
     daily_counts['DATE'] = pd.to_datetime(daily_counts['DATE'])
     
     fig, ax = plt.subplots(figsize=(14, 8))
@@ -162,7 +145,7 @@ def visual7_daily_usage_timeline(checks_live_all):
     plt.show()
 
 
-def visual8_weekly_patterns(df_runs, checks_live_all):
+def visual8_weekly_patterns(df):
     """
     Visual 8: Weekly Usage Patterns
     
@@ -173,48 +156,72 @@ def visual8_weekly_patterns(df_runs, checks_live_all):
     - Identifies weekly operational cycles
     - Reveals if certain days have higher/lower usage
     - Can indicate business operational patterns
+    
+    Args:
+        df: Merged dataframe with run and sample data (e.g., usage_live from Scenario 2)
+            Should have START_TIME (for runs) and TIMESTAMP (for samples)
     """
-    # Analyze by day of week
-    runs_live = df_runs[df_runs['ENVIRONMENT'] == 'live'].copy()
-    runs_live['DAY_OF_WEEK'] = runs_live['START_TIME'].dt.day_name()
+    # Make a copy to avoid modifying the original
+    df = df.copy()
     
-    checks_live_all_copy = checks_live_all.copy()
-    checks_live_all_copy['DAY_OF_WEEK'] = checks_live_all_copy['TIMESTAMP'].dt.day_name()
+    # For runs: use START_TIME to get day of week
+    if 'START_TIME' in df.columns:
+        df['RUN_DAY_OF_WEEK'] = df['START_TIME'].dt.day_name()
+        # Count unique runs by day of week
+        runs_daily = df.groupby('RUN_DAY_OF_WEEK')['RUN_ID'].nunique().reset_index(name='RUNS')
+        runs_daily = runs_daily.rename(columns={'RUN_DAY_OF_WEEK': 'DAY_OF_WEEK'})
+    else:
+        # Fallback: create empty dataframe
+        runs_daily = pd.DataFrame(columns=['DAY_OF_WEEK', 'RUNS'])
     
-    # Count runs and samples by day
-    runs_daily = runs_live.groupby('DAY_OF_WEEK').size().reset_index(name='RUNS')
-    samples_daily = checks_live_all_copy.groupby('DAY_OF_WEEK').size().reset_index(name='SAMPLES')
+    # For samples: use TIMESTAMP to get day of week
+    if 'TIMESTAMP' in df.columns:
+        df['SAMPLE_DAY_OF_WEEK'] = df['TIMESTAMP'].dt.day_name()
+        # Count all samples by day of week
+        samples_daily = df.groupby('SAMPLE_DAY_OF_WEEK').size().reset_index(name='SAMPLES')
+        samples_daily = samples_daily.rename(columns={'SAMPLE_DAY_OF_WEEK': 'DAY_OF_WEEK'})
+    else:
+        # Fallback: create empty dataframe
+        samples_daily = pd.DataFrame(columns=['DAY_OF_WEEK', 'SAMPLES'])
     
     # Order days
     day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    runs_daily['DAY_OF_WEEK'] = pd.Categorical(runs_daily['DAY_OF_WEEK'], categories=day_order, ordered=True)
-    samples_daily['DAY_OF_WEEK'] = pd.Categorical(samples_daily['DAY_OF_WEEK'], categories=day_order, ordered=True)
-    runs_daily = runs_daily.sort_values('DAY_OF_WEEK')
-    samples_daily = samples_daily.sort_values('DAY_OF_WEEK')
+    if not runs_daily.empty:
+        runs_daily['DAY_OF_WEEK'] = pd.Categorical(runs_daily['DAY_OF_WEEK'], categories=day_order, ordered=True)
+        runs_daily = runs_daily.sort_values('DAY_OF_WEEK')
+    if not samples_daily.empty:
+        samples_daily['DAY_OF_WEEK'] = pd.Categorical(samples_daily['DAY_OF_WEEK'], categories=day_order, ordered=True)
+        samples_daily = samples_daily.sort_values('DAY_OF_WEEK')
     
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
     
     # Runs by day
-    x = np.arange(len(runs_daily))
-    ax1.bar(x, runs_daily['RUNS'], color=COLORS['primary'], width=0.7, edgecolor='white', linewidth=1.5)
+    if not runs_daily.empty:
+        x = np.arange(len(runs_daily))
+        ax1.bar(x, runs_daily['RUNS'], color=COLORS['primary'], width=0.7, edgecolor='white', linewidth=1.5)
+        ax1.set_xticks(x)
+        ax1.set_xticklabels(runs_daily['DAY_OF_WEEK'], rotation=45, ha='right', fontsize=16)
+    else:
+        ax1.text(0.5, 0.5, 'No run data available', ha='center', va='center', transform=ax1.transAxes, fontsize=14)
     ax1.set_xlabel("Day of Week", fontsize=16, weight="bold", color="black")
     ax1.set_ylabel("Number of Runs", fontsize=16, weight="bold", color="black")
     ax1.set_title("Production Runs by Day of Week", fontsize=16, weight="bold", color="black")
-    ax1.set_xticks(x)
-    ax1.set_xticklabels(runs_daily['DAY_OF_WEEK'], rotation=45, ha='right', fontsize=16)
     ax1.spines['top'].set_visible(False)
     ax1.spines['right'].set_visible(False)
     ax1.set_axisbelow(True)
     ax1.grid(True, which='major', axis='y', alpha=0.5, color='#cccccc', linewidth=1.0, linestyle='-', zorder=0)
     
     # Samples by day
-    x2 = np.arange(len(samples_daily))
-    ax2.bar(x2, samples_daily['SAMPLES'], color=COLORS['success'], width=0.7, edgecolor='white', linewidth=1.5)
+    if not samples_daily.empty:
+        x2 = np.arange(len(samples_daily))
+        ax2.bar(x2, samples_daily['SAMPLES'], color=COLORS['success'], width=0.7, edgecolor='white', linewidth=1.5)
+        ax2.set_xticks(x2)
+        ax2.set_xticklabels(samples_daily['DAY_OF_WEEK'], rotation=45, ha='right', fontsize=16)
+    else:
+        ax2.text(0.5, 0.5, 'No sample data available', ha='center', va='center', transform=ax2.transAxes, fontsize=14)
     ax2.set_xlabel("Day of Week", fontsize=16, weight="bold", color="black")
     ax2.set_ylabel("Number of Samples", fontsize=16, weight="bold", color="black")
     ax2.set_title("Samples Processed by Day of Week", fontsize=16, weight="bold", color="black")
-    ax2.set_xticks(x2)
-    ax2.set_xticklabels(samples_daily['DAY_OF_WEEK'], rotation=45, ha='right', fontsize=16)
     ax2.spines['top'].set_visible(False)
     ax2.spines['right'].set_visible(False)
     ax2.set_axisbelow(True)
