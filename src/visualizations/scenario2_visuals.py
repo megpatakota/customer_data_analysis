@@ -187,10 +187,10 @@ def visual3_success_rate(df):
     Args:
         df: Merged dataframe - will be filtered to LIVE runs only
     """
-    # Filter to LIVE runs only
-    df_live = df[df["ENVIRONMENT_runs"] == "live"].copy()
+    # # Filter to LIVE runs only
+    # df_live = df[df["ENVIRONMENT_runs"] == "live"].copy()
     
-    success_monthly = df_live.groupby("YEAR_MONTH").agg(
+    success_monthly = df.groupby("YEAR_MONTH").agg(
         # df (from data_loader) uses RUN_ID as the run identifier, not ID
         TOTAL_RUNS=("RUN_ID", "count"),
         FINISHED=("OUTCOME", lambda s: (s == "finished").sum()),

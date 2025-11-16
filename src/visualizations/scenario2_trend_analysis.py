@@ -25,12 +25,11 @@ def visual5_workflow_creation_trends(df):
     
     Args:
         df: Merged dataframe - will be filtered to LIVE workflows only
-    """
+    """    
     # Filter to LIVE workflows only
-    df_live = df[df["ENVIRONMENT_wfs"] == "live"].copy() if "ENVIRONMENT_wfs" in df.columns else df.copy()
     
-    df_live['DATE'] = df_live['WORKFLOW_TIMESTAMP'].dt.date
-    daily_workflows = df_live.groupby('DATE').size().reset_index(name='WORKFLOWS_CREATED')
+    df['DATE'] = df['WORKFLOW_TIMESTAMP'].dt.date
+    daily_workflows = df.groupby('DATE').size().reset_index(name='WORKFLOWS_CREATED')
     daily_workflows['DATE'] = pd.to_datetime(daily_workflows['DATE'])
     
     fig, ax = plt.subplots(figsize=(14, 8))
@@ -40,7 +39,7 @@ def visual5_workflow_creation_trends(df):
     
     ax.set_xlabel("Date", fontsize=16, weight="bold", color="black")
     ax.set_ylabel("Number of Workflows Created", fontsize=16, weight="bold", color="black")
-    ax.set_title("Scenario 2: Daily Live Workflow Creation Trend",
+    ax.set_title("Scenario 2: Daily Workflow Creation Trend",
                  fontsize=16, weight="bold", pad=20, color="black")
     plt.xticks(rotation=45, ha='right', fontsize=16)
     ax.spines['top'].set_visible(False)
@@ -70,13 +69,13 @@ def visual6_run_duration_analysis(df):
         df: Merged dataframe - will be filtered to LIVE runs only
     """
     # Filter to LIVE runs only
-    df_live = df[df["ENVIRONMENT_runs"] == "live"].copy() if "ENVIRONMENT_runs" in df.columns else df.copy()
+    df = df[df["ENVIRONMENT_runs"] == "live"].copy() if "ENVIRONMENT_runs" in df.columns else df.copy()
     
     # Calculate duration in hours
-    df_live['DURATION_HOURS'] = (df_live['STOP_TIME'] - df_live['START_TIME']).dt.total_seconds() / 3600
+    df['DURATION_HOURS'] = (df['STOP_TIME'] - df['START_TIME']).dt.total_seconds() / 3600
     
-    df_live['DATE'] = df_live['START_TIME'].dt.date
-    daily_durations = df_live.groupby('DATE').agg(
+    df['DATE'] = df['START_TIME'].dt.date
+    daily_durations = df.groupby('DATE').agg(
         AVG_DURATION=('DURATION_HOURS', 'mean'),
         MEDIAN_DURATION=('DURATION_HOURS', 'median'),
         COUNT=('RUN_ID', 'count')
@@ -156,12 +155,12 @@ def visual7_daily_usage_timeline(df):
     plt.show()
 
 
-def visual8_weekly_patterns(df):
+def visual8_weekly_patterns(df, usage_live):
     """
     Visual 8: Weekly Usage Patterns
     
     Shows usage patterns by day of week to identify weekly cycles.
-    Uses both run data and sample data to understand patterns.
+    Analyzes both production runs and individual samples processed.
     
     Why this visual:
     - Identifies weekly operational cycles
@@ -169,76 +168,103 @@ def visual8_weekly_patterns(df):
     - Can indicate business operational patterns
     
     Args:
-        df: Merged dataframe with run and sample data (e.g., usage_live from Scenario 2)
-            Should have START_TIME (for runs) and TIMESTAMP (for samples)
+        df: Merged dataframe with all data - used for all runs analysis
+            Must have START_TIME (run start time) and RUN_ID
+        usage_live: Sample-level dataframe from get_usage_live_data()
+            Contains LIVE + finished runs only - used for live successful runs analysis
+            Must have START_TIME (run start time) and RUN_ID
     """
-    # Make a copy to avoid modifying the original
+    # Make copies to avoid modifying the originals
     df = df.copy()
+    usage_live = usage_live.copy()
     
-    # For runs: use START_TIME to get day of week
-    if 'START_TIME' in df.columns:
-        df['RUN_DAY_OF_WEEK'] = df['START_TIME'].dt.day_name()
-        # Count unique runs by day of week
-        runs_daily = df.groupby('RUN_DAY_OF_WEEK')['RUN_ID'].nunique().reset_index(name='RUNS')
-        runs_daily = runs_daily.rename(columns={'RUN_DAY_OF_WEEK': 'DAY_OF_WEEK'})
-    else:
-        # Fallback: create empty dataframe
-        runs_daily = pd.DataFrame(columns=['DAY_OF_WEEK', 'RUNS'])
+    # Left Chart: All Runs Analysis
+    # Count unique runs per day of week from all data (all environments, all outcomes)
+    # Get unique runs: for each RUN_ID, take the first START_TIME (they should all be the same for a given run)
+    df_runs_unique = df[['RUN_ID', 'START_TIME']].drop_duplicates(subset=['RUN_ID'], keep='first')
+    df_runs_unique = df_runs_unique[df_runs_unique['START_TIME'].notna()]  # Only runs with START_TIME
+    df_runs_unique['RUN_DAY_OF_WEEK'] = df_runs_unique['START_TIME'].dt.day_name()
+    runs_daily = df_runs_unique.groupby('RUN_DAY_OF_WEEK')['RUN_ID'].nunique().reset_index(name='RUNS')
+    runs_daily = runs_daily.rename(columns={'RUN_DAY_OF_WEEK': 'DAY_OF_WEEK'})
     
-    # For samples: use TIMESTAMP to get day of week
-    if 'TIMESTAMP' in df.columns:
-        df['SAMPLE_DAY_OF_WEEK'] = df['TIMESTAMP'].dt.day_name()
-        # Count all samples by day of week
-        samples_daily = df.groupby('SAMPLE_DAY_OF_WEEK').size().reset_index(name='SAMPLES')
-        samples_daily = samples_daily.rename(columns={'SAMPLE_DAY_OF_WEEK': 'DAY_OF_WEEK'})
-    else:
-        # Fallback: create empty dataframe
-        samples_daily = pd.DataFrame(columns=['DAY_OF_WEEK', 'SAMPLES'])
+    # Right Chart: Live Successful Runs Analysis
+    # Count unique runs per day of week from usage_live (LIVE + finished only)
+    # Get unique runs: for each RUN_ID, take the first START_TIME (they should all be the same for a given run)
+    usage_live_runs_unique = usage_live[['RUN_ID', 'START_TIME']].drop_duplicates(subset=['RUN_ID'], keep='first')
+    usage_live_runs_unique = usage_live_runs_unique[usage_live_runs_unique['START_TIME'].notna()]  # Only runs with START_TIME
+    usage_live_runs_unique['RUN_DAY_OF_WEEK'] = usage_live_runs_unique['START_TIME'].dt.day_name()
+    live_runs_daily = usage_live_runs_unique.groupby('RUN_DAY_OF_WEEK')['RUN_ID'].nunique().reset_index(name='RUNS')
+    live_runs_daily = live_runs_daily.rename(columns={'RUN_DAY_OF_WEEK': 'DAY_OF_WEEK'})
     
-    # Order days
+    # Merge the dataframes to create stacked chart data
+    # Ensure both have all days of week for consistent comparison
     day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    if not runs_daily.empty:
-        runs_daily['DAY_OF_WEEK'] = pd.Categorical(runs_daily['DAY_OF_WEEK'], categories=day_order, ordered=True)
-        runs_daily = runs_daily.sort_values('DAY_OF_WEEK')
-    if not samples_daily.empty:
-        samples_daily['DAY_OF_WEEK'] = pd.Categorical(samples_daily['DAY_OF_WEEK'], categories=day_order, ordered=True)
-        samples_daily = samples_daily.sort_values('DAY_OF_WEEK')
     
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
+    # Convert DAY_OF_WEEK to string to avoid categorical issues during merge
+    runs_daily['DAY_OF_WEEK'] = runs_daily['DAY_OF_WEEK'].astype(str)
+    live_runs_daily['DAY_OF_WEEK'] = live_runs_daily['DAY_OF_WEEK'].astype(str)
     
-    # Runs by day
-    if not runs_daily.empty:
-        x = np.arange(len(runs_daily))
-        ax1.bar(x, runs_daily['RUNS'], color=COLORS['primary'], width=0.7, edgecolor='white', linewidth=1.5)
-        ax1.set_xticks(x)
-        ax1.set_xticklabels(runs_daily['DAY_OF_WEEK'], rotation=45, ha='right', fontsize=16)
-    else:
-        ax1.text(0.5, 0.5, 'No run data available', ha='center', va='center', transform=ax1.transAxes, fontsize=14)
-    ax1.set_xlabel("Day of Week", fontsize=16, weight="bold", color="black")
-    ax1.set_ylabel("Number of Runs", fontsize=16, weight="bold", color="black")
-    ax1.set_title("Production Runs by Day of Week", fontsize=16, weight="bold", color="black")
-    ax1.spines['top'].set_visible(False)
-    ax1.spines['right'].set_visible(False)
-    ax1.set_axisbelow(True)
-    ax1.grid(True, which='major', axis='y', alpha=0.5, color='#cccccc', linewidth=1.0, linestyle='-', zorder=0)
+    # Create complete day list
+    all_days = pd.DataFrame({'DAY_OF_WEEK': day_order})
     
-    # Samples by day
-    if not samples_daily.empty:
-        x2 = np.arange(len(samples_daily))
-        ax2.bar(x2, samples_daily['SAMPLES'], color=COLORS['success'], width=0.7, edgecolor='white', linewidth=1.5)
-        ax2.set_xticks(x2)
-        ax2.set_xticklabels(samples_daily['DAY_OF_WEEK'], rotation=45, ha='right', fontsize=16)
-    else:
-        ax2.text(0.5, 0.5, 'No sample data available', ha='center', va='center', transform=ax2.transAxes, fontsize=14)
-    ax2.set_xlabel("Day of Week", fontsize=16, weight="bold", color="black")
-    ax2.set_ylabel("Number of Samples", fontsize=16, weight="bold", color="black")
-    ax2.set_title("Samples Processed by Day of Week", fontsize=16, weight="bold", color="black")
-    ax2.spines['top'].set_visible(False)
-    ax2.spines['right'].set_visible(False)
-    ax2.set_axisbelow(True)
-    ax2.grid(True, which='major', axis='y', alpha=0.5, color='#cccccc', linewidth=1.0, linestyle='-', zorder=0)
+    # Merge with all days to ensure all days are present, fill numeric columns with 0
+    runs_daily = all_days.merge(runs_daily, on='DAY_OF_WEEK', how='left')
+    runs_daily['RUNS'] = runs_daily['RUNS'].fillna(0).astype(int)
     
-    fig.suptitle("Scenario 2: Weekly Usage Patterns Analysis", fontsize=16, weight="bold", color="black", y=1.02)
+    live_runs_daily = all_days.merge(live_runs_daily, on='DAY_OF_WEEK', how='left')
+    live_runs_daily['RUNS'] = live_runs_daily['RUNS'].fillna(0).astype(int)
+    
+    # Merge all runs and live runs data
+    # Use left merge to ensure we have all days from runs_daily
+    merged_data = runs_daily.merge(live_runs_daily, on='DAY_OF_WEEK', how='left', suffixes=('_all', '_live'))
+    merged_data['RUNS_all'] = merged_data['RUNS_all'].fillna(0).astype(int)
+    merged_data['RUNS_live'] = merged_data['RUNS_live'].fillna(0).astype(int)
+    
+    # Ensure all runs >= live runs (usage_live is a subset of df)
+    # If live runs > all runs, something is wrong - cap it
+    merged_data['RUNS_live'] = merged_data[['RUNS_all', 'RUNS_live']].min(axis=1)
+    
+    # Convert to categorical for proper ordering
+    merged_data['DAY_OF_WEEK'] = pd.Categorical(merged_data['DAY_OF_WEEK'], categories=day_order, ordered=True)
+    merged_data = merged_data.sort_values('DAY_OF_WEEK')
+    
+    # Create grouped bar chart for clearer comparison
+    fig, ax = plt.subplots(figsize=(14, 8))
+    
+    x = np.arange(len(merged_data))
+    width = 0.35  # Width for each bar group
+    
+    # All Runs bar (left side of each pair)
+    bars1 = ax.bar(x - width/2, merged_data['RUNS_all'], width, label='All Runs', 
+                   color=COLORS['primary'], edgecolor='white', linewidth=1.5)
+    
+    # Live Runs bar (right side of each pair)
+    bars2 = ax.bar(x + width/2, merged_data['RUNS_live'], width, label='Live Runs', 
+                   color=COLORS['success'], edgecolor='white', linewidth=1.5)
+    
+    # Add value labels on bars
+    for bars in [bars1, bars2]:
+        for bar in bars:
+            height = bar.get_height()
+            if height > 0:
+                ax.text(bar.get_x() + bar.get_width()/2., height,
+                       f'{int(height)}',
+                       ha='center', va='bottom', fontsize=12, weight='bold')
+    
+    ax.set_xticks(x)
+    ax.set_xticklabels(merged_data['DAY_OF_WEEK'], rotation=45, ha='right', fontsize=16)
+    ax.set_xlabel("Day of Week", fontsize=16, weight="bold", color="black")
+    ax.set_ylabel("Number of Runs", fontsize=16, weight="bold", color="black")
+    ax.set_title("Weekly Usage Patterns: All Runs vs Live Successful Runs", 
+                 fontsize=16, weight="bold", pad=20, color="black")
+    ax.legend(loc="upper left", frameon=True, fontsize=16)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_linewidth(2)
+    ax.spines['bottom'].set_linewidth(2)
+    ax.set_axisbelow(True)
+    ax.grid(True, which='major', axis='y', alpha=0.5, color='#cccccc', linewidth=1.0, linestyle='-', zorder=0)
+    
     plt.tight_layout()
     plt.show()
 

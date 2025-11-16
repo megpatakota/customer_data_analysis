@@ -140,7 +140,7 @@ def visual10_churn_risk_timeline(df,health_metrics):
     Args:
         df: Merged dataframe - will be filtered to LIVE runs only
         health_metrics: Dictionary of health metrics
-    """
+    """    
     # Filter to LIVE runs only
     df_live = df[df["ENVIRONMENT_runs"] == "live"].copy() if "ENVIRONMENT_runs" in df.columns else df.copy()
     

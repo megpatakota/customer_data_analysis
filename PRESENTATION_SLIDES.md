@@ -320,16 +320,16 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
    - Issue is systemic across all months (10-18% overbilling)
 
 2. **Scenario 2 - Customer Health:**
-   - Strong overall growth trend (71.5% from May to August)
+   - Strong overall growth trend (71.49% from May to August)
    - Single month decline (16.51% in August) - exceeds 15% risk threshold
    - Alert triggered: Month with >15% drop in processing volume
-   - Customer health status: AT RISK (HIGH risk level based on comprehensive metrics)
+   - Customer health status: MEDIUM risk level (based on comprehensive metrics)
    - Operational health: CRITICAL (success rate 75.0% latest, 62.0% average - both below 80% threshold)
    - Comprehensive metrics show: 
      - DECELERATING growth trajectory
      - MEDIUM concentration risk (41.0% top workflow, 87.5% top 3)
      - MATURE platform (130 days avg age, 0 new workflows)
-     - HIGH churn risk (exceeds threshold)
+     - MEDIUM churn risk (0 consecutive declines, -16.51% latest MoM)
      - CRITICAL operational health (requires immediate attention)
 
 **Visual:** Use Scenario 1 Visual 1 (Billing Dispute comparison)
@@ -606,14 +606,15 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 - July: 1,405 samples (+76.73%) Peak
 - August: 1,173 samples (-16.51%) **ALERT**
 
-**Overall Growth:** 71.5% from May to August
+**Overall Growth:** 71.49% from May to August
 
 **Key Observations:**
 - Strong growth from May → June → July as customer ramps up usage
-- Single significant drop (~16.5%) in August relative to July
+- Single significant drop (~19%) in August relative to July (16.51% MoM change)
 - August volume still higher than May/June (1,173 vs 684/795)
 - On 3-month moving average basis, last 3 months (Jun-Aug) are ~17% higher than previous period
 - Overall usage trend remains STABLE/HEALTHY despite August decline
+- Total samples in finished LIVE runs: 4,140 samples
 
 ---
 
@@ -641,6 +642,7 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 - Color-coded visualization highlights risk periods (red) and growth periods (green)
 - Need to monitor next month closely to confirm if this is a trend or temporary dip
 - Workflow-level analysis shows declines concentrated in archived workflows (may be intentional phase-out)
+- Workflows with >20% decline between last two months are flagged (declines concentrated in [ARCHIVED] workflows)
 
 ---
 
@@ -691,23 +693,24 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 - Month-over-Month: -16.51% (Decline)
 - 3-Month Trend: +17.0% (Still positive overall - last 3 months vs previous 3)
 - Success Rate: 75.0% (Latest), 62.0% (Average)
-- Overall Growth: +71.5% (Since May)
+- Overall Growth: +71.49% (Since May)
 
 **Health Score:** Composite score based on multiple factors (usage trends, success rates, 3-month trend)
 
-**Status:** AT RISK - Requires monitoring and proactive engagement
+**Status:** MEDIUM RISK - Requires monitoring and proactive engagement
 
 ---
 
 ## SLIDE 21: Scenario 2 - Risk Assessment
 
-**Why "AT RISK"?**
+**Why "MEDIUM RISK"?**
 
 1. **Recent Decline:**
    - 16.51% drop in August exceeds 15% risk threshold
+   - Single significant drop (~19%) relative to July
    - Largest single-month decline observed
    - Growth trajectory: DECELERATING
-   - Alert triggered: Month with >15% drop in processing volume
+   - Alert triggered: Month with >15% drop in processing volume vs previous month
 
 2. **Operational Health Concerns:**
    - Success rate: 75.0% (latest) - below 80% warning threshold
@@ -717,14 +720,18 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
    - Low success rate may be contributing to customer dissatisfaction
 
 3. **However, Positive Indicators:**
-   - Overall trend still positive (71.5% growth since May)
+   - Overall trend still positive (71.49% growth since May)
    - 0 consecutive monthly declines
    - August volume (1,173) still higher than May (684) and June (795)
    - 3-month trend: +17.0% (last 3 months vs previous 3)
    - Health summary shows: STABLE/HEALTHY overall usage trend
    - Decline may be concentrated in archived workflows (intentional phase-out)
+   - Risk level: MEDIUM (not HIGH) - indicates concern but not critical yet
 
-4. **Uncertainty:**
+4. **Risk Assessment (from Notebook Narrative):**
+   - **Short-term risk:** August's ~19% drop is a warning sign and worth monitoring, especially if the customer has seasonality or known external drivers
+   - **Medium-term risk:** Because the 3-month average is still above the previous period and declines are concentrated in archived workflows, the customer does **not yet** look like they are systematically churning away from the platform
+   - **Action:** Monitor billable volume by month and by key live workflows for the next 1–2 months. If further consecutive declines occur, treat the account as **at-risk** and engage proactively (e.g. review operational issues, success rates, backlog)
    - Is this a temporary dip or the start of a decline?
    - Could be seasonal variation or workflow archiving
    - Operational health issues (CRITICAL success rate) may be affecting customer satisfaction
@@ -812,32 +819,71 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 ---
 
-## SLIDE 22C: Weekly Usage Patterns
+## SLIDE 22C: High-Level Statistics
+
+**Visual:** Scenario 2 Visual 8B - High-Level Statistics Dashboard
+
+**Data Used:** `df` (merged dataframe with all data) and `usage_live` (all finished LIVE samples)
+
+**Why This Data:**
+- Provides quick overview of platform scale
+- Shows proportion of live vs all activity
+- Helps understand overall usage patterns
+- Compares all data vs live successful runs
+
+**What We're Analyzing:**
+- Total Runs (All vs Live)
+- Unique Runs (All vs Live)
+- Total Samples (All vs Live)
+- Workflows (All vs Live)
+- Live percentage for each metric
+
+**Why This Matters:**
+- Shows overall platform scale and engagement
+- Reveals proportion of activity that is live vs all environments
+- Provides context for usage trend analysis
+- Helps understand customer's platform utilization
+
+---
+
+## SLIDE 22C1: Weekly Usage Patterns
 
 **Visual:** Scenario 2 Visual 8 - Weekly Usage Patterns
 
-**Data Used:** `usage_live` - All samples from finished LIVE runs (regardless of QC status)
+**Data Used:** `df` (merged dataframe with all data) and `usage_live` (all finished LIVE samples)
 
 **Why This Data:**
 - Day-of-week patterns reveal weekly operational cycles
 - Shows if customer has consistent weekly schedules or irregular patterns
 - Helps identify business operational patterns (e.g., weekday vs weekend processing)
+- Compares all runs vs live runs to understand operational patterns
+- Separates run-level and sample-level patterns to understand both operational frequency and volume
 
 **What We're Analyzing:**
-- Usage patterns by day of week
-- Weekly operational cycles
-- Business pattern identification
-- Number of production runs by day of week
-- Number of samples processed by day of week
+- Extracts day of week from `START_TIME` (for runs) and `TIMESTAMP` (for samples)
+- Groups by day of week (Monday through Sunday)
+- For runs: Counts unique `RUN_ID` per day of week
+- For samples: Counts total samples per day of week
+- Orders days chronologically (Monday to Sunday) for proper visualization
+- Grouped bar chart comparing "All Runs" vs "Live Runs" side-by-side
+
+**What is the Data Set Up As:**
+- **Input:** `df` (all data) and `usage_live` (live successful runs)
+- **For All Runs:** Deduplicates by `RUN_ID` from `df`, filters for `START_TIME.notna()`, groups by day of week
+- **For Live Runs:** Deduplicates by `RUN_ID` from `usage_live`, filters for `START_TIME.notna()`, groups by day of week
+- **Output:** Two series - runs by day of week (All Runs vs Live Runs) in grouped bar chart format
 
 **Why This Matters:**
 - Identifies weekly operational cycles
 - Reveals if certain days have higher/lower usage
 - Shows business operational patterns
-- Consistent across days = regular operations
-- Higher on weekdays = business-hours focused operations
-- Higher on weekends = 24/7 operations or special processing
-- Irregular patterns = ad-hoc or project-based usage
+- Comparison of all runs vs live runs shows operational scope
+- Consistent across all days = regular, 24/7 operations (good for platform engagement)
+- Higher on weekdays (Mon-Fri) = business-hours focused operations (typical corporate pattern)
+- Higher on weekends (Sat-Sun) = 24/7 operations or special weekend processing
+- Irregular patterns = ad-hoc or project-based usage (may indicate inconsistent engagement)
+- Large difference between weekdays and weekends = business-hours focused (normal for many customers)
+- Similar weekday and weekend volumes = continuous operations (high engagement)
 
 ---
 
@@ -858,7 +904,7 @@ Using industry-standard customer success metrics to assess customer health:
 1. **Churn Risk Indicators:**
    - Consecutive monthly declines: 0 months
    - Latest MoM change: -16.51% (from actual usage data)
-   - Risk Level: HIGH (based on comprehensive metrics calculation)
+   - Risk Level: MEDIUM (based on comprehensive metrics calculation)
    - Alert: Single month with >15% drop triggers risk flag
 
 2. **Engagement Metrics:**
@@ -868,7 +914,7 @@ Using industry-standard customer success metrics to assess customer health:
 
 3. **Growth Velocity:**
    - Recent Growth: -16.51% (August MoM change)
-   - Overall Growth: +71.5% (from May to August)
+   - Overall Growth: +71.49% (from May to August)
    - Growth Trajectory: DECELERATING (concerning trend)
 
 4. **Operational Health:**
@@ -902,18 +948,33 @@ Using industry-standard customer success metrics to assess customer health:
 - Function receives full merged dataframe and filters to `ENVIRONMENT_runs == "live"` internally
 
 **What We're Analyzing:**
+- Function receives `df` (merged dataframe with all data) and filters internally to LIVE runs only
+- Groups by `YEAR_MONTH`
+- Counts total samples per month, calculates month-over-month percentage change
+- Identifies months with >15% drops and marks them with risk indicators
+- Calculates average usage across all months for baseline comparison
+- Extracts current risk level from `health_metrics` for annotation
 - Usage trends over time with churn risk markers
 - Highlights concerning periods with significant drops (>15% month-over-month)
-- Current risk level indicator
+- Current risk level indicator (MEDIUM based on health metrics)
 - Average usage baseline for comparison
 
 **Why This Matters:**
 - Visualizes churn risk progression over time
 - Identifies when risk increased/decreased
 - Provides actionable timeline for customer success team
-- Drops below average = concerning pattern
-- Risk markers (red triangles) = periods exceeding risk threshold
-- Current risk level = overall assessment based on recent trends
+- Drops below average = concerning pattern (usage below typical level)
+- Risk markers (red triangles) = periods exceeding 15% risk threshold (immediate attention needed)
+- Current risk level = overall assessment based on recent trends (from health_metrics):
+  - HIGH = immediate action required
+  - MEDIUM = monitor closely, proactive engagement (current status)
+  - LOW = healthy, normal monitoring
+- Upward trend = positive (growing usage)
+- Downward trend = concerning (declining usage)
+- Multiple consecutive risk markers = escalating churn risk (very concerning)
+- Single risk marker = isolated incident (monitor but may be temporary)
+- Risk timeline = helps customer success team prioritize engagement timing
+- Gap between usage and average = shows deviation from normal operations
 
 ---
 
@@ -946,30 +1007,33 @@ Using industry-standard customer success metrics to assess customer health:
 **Scenario 2 - Customer Health:**
 
 **What the Data Shows:**
-- Strong overall growth trend (71.5% from May to August)
-- Single month decline in August (16.51%) - exceeds 15% risk threshold
-- Alert triggered: Month with >15% drop in processing volume
+- Total samples in finished LIVE runs: 4,140 samples (all QC outcomes)
+- Strong overall growth trend (71.49% from May to August)
+- Single month decline in August (16.51% MoM, ~19% relative to July) - exceeds 15% risk threshold
+- Alert triggered: Month with >15% drop in processing volume vs previous month
 - Decline may be concentrated in archived workflows (intentional phase-out)
+- Workflows with >20% decline between last two months are flagged (declines in [ARCHIVED] workflows)
 - Operational health: CRITICAL (success rate 75.0% latest, 62.0% average - both below 80% threshold)
 - Comprehensive trend analysis reveals:
   - Workflow lifecycle patterns (creation trends over time)
   - Run duration trends (operational efficiency indicators)
   - Daily usage timeline (day-to-day volatility and patterns)
-  - Weekly operational cycles (day-of-week patterns)
+  - Weekly operational cycles (day-of-week patterns, comparing all runs vs live runs)
+  - High-level statistics comparing all data vs live runs
 - Real-world customer health metrics show:
-  - Churn Risk: HIGH (0 consecutive declines, -16.51% latest MoM, exceeds risk threshold)
-  - Growth Velocity: DECELERATING (-16.51% recent, +71.5% overall)
-  - Engagement: 17 active workflows, 242.9% utilization, 0.719 diversity index
+  - Churn Risk: MEDIUM (0 consecutive declines, -16.51% latest MoM, exceeds risk threshold)
+  - Growth Velocity: DECELERATING (-16.51% recent, +71.49% overall)
+  - Engagement: 17 active workflows / 7 total workflows, 242.9% utilization, 0.719 diversity index
   - Usage Concentration: MEDIUM risk (41.0% top workflow, 87.5% top 3 workflows)
   - Platform Maturity: MATURE (130 days avg age, 0 new workflows, 6 established)
 
 **What This Means:**
-- Overall usage trend is positive (71.5% growth, 3-month trend +17.0%)
+- Overall usage trend is positive (71.49% growth, 3-month trend +17.0%)
 - August decline exceeds risk threshold (-16.51%) - requires immediate attention
 - Operational health is CRITICAL - success rate below 80% threshold requires immediate investigation
 - Health summary shows: STABLE/HEALTHY overall usage trend (3-month comparison)
 - Customer health metrics provide actionable insights for customer success team
-- Risk level: HIGH - requires immediate monitoring and proactive engagement
+- Risk level: MEDIUM - requires monitoring and proactive engagement (not yet critical)
 - Key concern: Operational health (CRITICAL success rate) may be affecting customer satisfaction
 - Further monitoring needed to determine if trend continues or stabilizes
 - Need to investigate why success rate is so low (62.0% average, 75.0% latest)
@@ -1003,30 +1067,36 @@ Using industry-standard customer success metrics to assess customer health:
 **Scenario 2 - What We Know:**
 
 1. **The Facts:**
-   - Strong overall growth trend (71.5% from May to August)
-   - Single month decline in August (16.51%) - exceeds 15% risk threshold
+   - Total samples in finished LIVE runs: 4,140 samples (all QC outcomes)
+   - Strong overall growth trend (71.49% from May to August)
+   - Single month decline in August (16.51% MoM, ~19% relative to July) - exceeds 15% risk threshold
    - Alert triggered: Month with >15% drop in processing volume vs previous month
    - Decline may be concentrated in archived workflows (intentional phase-out)
+   - Workflows with >20% decline between last two months are flagged (declines in [ARCHIVED] workflows)
    - Operational health: CRITICAL (success rate 75.0% latest, 62.0% average - both below 80% threshold)
    - Comprehensive trend analysis reveals:
      - Workflow creation patterns over time (workflow lifecycle)
      - Run duration trends (operational efficiency)
      - Daily usage timeline (day-to-day volatility and patterns)
-     - Weekly operational cycles (day-of-week patterns)
+     - Weekly operational cycles (day-of-week patterns, comparing all runs vs live runs)
+     - High-level statistics comparing all data vs live runs
    - Real-world customer health metrics show:
-     - Churn Risk: HIGH (0 consecutive declines, -16.51% latest MoM, exceeds risk threshold)
-     - Growth Velocity: DECELERATING (-16.51% recent, +71.5% overall)
-     - Engagement: 17 active workflows, 242.9% utilization, 0.719 diversity index
+     - Churn Risk: MEDIUM (0 consecutive declines, -16.51% latest MoM, exceeds risk threshold)
+     - Growth Velocity: DECELERATING (-16.51% recent, +71.49% overall)
+     - Engagement: 17 active workflows / 7 total workflows, 242.9% utilization, 0.719 diversity index
      - Usage Concentration: MEDIUM risk (41.0% top workflow, 87.5% top 3 workflows)
      - Platform Maturity: MATURE (130 days avg age, 0 new workflows, 6 established)
 
 2. **What This Tells Us:**
-   - Overall usage trend is positive (71.5% growth, 3-month trend +17.0%)
-   - August decline exceeds risk threshold (-16.51%) - requires immediate attention
-   - Health summary shows: STABLE/HEALTHY overall usage trend (3-month comparison)
+   - Overall usage trend is positive (71.49% growth, 3-month trend +17.0%)
+   - August decline exceeds risk threshold (-16.51% MoM, ~19% relative to July) - requires immediate attention
+   - Health summary shows: STABLE/HEALTHY overall usage trend (3-month comparison: last 3 months vs previous 3)
    - Operational health is CRITICAL - success rate below 80% threshold requires immediate investigation
    - Customer health metrics provide actionable insights for customer success team
-   - Risk level: HIGH - requires immediate monitoring and proactive engagement
+   - Risk level: MEDIUM - requires monitoring and proactive engagement (not yet critical)
+   - **Short-term risk:** August's ~19% drop is a warning sign and worth monitoring
+   - **Medium-term risk:** Because the 3-month average is still above the previous period and declines are concentrated in archived workflows, the customer does **not yet** look like they are systematically churning away from the platform
+   - **Action:** Monitor billable volume by month and by key live workflows for the next 1–2 months. If further consecutive declines occur, treat the account as **at-risk** and engage proactively
    - Key concern: Operational health (CRITICAL success rate) may be affecting customer satisfaction
    - Need more data to determine if trend continues or if operational issues are affecting usage
    - Need to investigate why success rate is so low (62.0% average, 75.0% latest) - this is a critical issue
@@ -1106,7 +1176,8 @@ Using industry-standard customer success metrics to assess customer health:
 - **Scenario 2 Visual 5:** Slide 22 (Workflow Creation Trends)
 - **Scenario 2 Visual 6:** Slide 22A (Run Duration Trends)
 - **Scenario 2 Visual 7:** Slide 22B (Daily Usage Timeline)
-- **Scenario 2 Visual 8:** Slide 22C (Weekly Usage Patterns)
+- **Scenario 2 Visual 8B:** Slide 22C (High-Level Statistics)
+- **Scenario 2 Visual 8:** Slide 22C1 (Weekly Usage Patterns)
 - **Scenario 2 Visual 9:** Slide 22D (Customer Health Dashboard)
 - **Scenario 2 Visual 10:** Slide 22E (Churn Risk Timeline)
 
