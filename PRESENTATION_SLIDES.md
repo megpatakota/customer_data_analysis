@@ -535,6 +535,11 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
   - 92 missing QC results in finished LIVE runs (~2.2% of samples) and 1 sample with null `SAMPLE_TYPE` in billable data.
   - Sensitivity analysis shows excluding missing QC changes billing by only 1 sample (<0.03%), so bone marrow remains the dominant driver of the dispute.
 
+- **Environment Mismatch (LIVE Runs vs ARCHIVED Workflows):**
+  - Data shows bone marrow samples where `ENVIRONMENT_runs = "live"` but `ENVIRONMENT_wfs = "archived"`.
+  - Interpretation: runs reflect the environment **at execution time**, while workflows reflect their **current** status (some later renamed/archived).
+  - This suggests these workflows were genuinely used in LIVE production when bone marrow was processed, and only later archived, so the billing logic is consistently treating those runs as production.
+
 ---
 
 ## SLIDE 16B: What the Time-Based Analysis Reveals
