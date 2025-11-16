@@ -320,10 +320,11 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
    - Issue is systemic across all months (10-18% overbilling)
 
 2. **Scenario 2 - Customer Health:**
-   - Strong overall growth trend (62.5% from May to August)
-   - Single month decline (18.8% in August) - monitor closely
-   - Customer health status: AT RISK (requires attention)
-   - Service quality remains high (success rate >90%)
+   - Strong overall growth trend (71.5% from May to August)
+   - Single month decline (16.5% in August) - exceeds 15% risk threshold
+   - Customer health status: AT RISK (MEDIUM risk level)
+   - Operational health: CRITICAL (success rate 75.0% latest, 62.0% average - below 80% threshold)
+   - Comprehensive metrics show: DECELERATING growth, MEDIUM concentration risk, MATURE platform
 
 **Visual:** Use Scenario 1 Visual 1 (Billing Dispute comparison)
 
@@ -685,21 +686,32 @@ Overbilling % = (Non-blood/saliva samples / Blood+saliva samples) x 100
 
 ## SLIDE 21: Scenario 2 - Risk Assessment
 
-**Why "AT RISK"?**
+**Why "AT RISK" (MEDIUM Risk Level)?**
 
 1. **Recent Decline:**
-   - 18.8% drop in August exceeds risk threshold
+   - 16.5% drop in August exceeds 15% risk threshold
    - Largest single-month decline observed
+   - Growth trajectory: DECELERATING
 
-2. **However, Positive Indicators:**
-   - Overall trend still positive (62.5% growth since May)
-   - High success rates (service quality good)
+2. **Operational Health Concerns:**
+   - Success rate: 75.0% (latest) - below 80% warning threshold
+   - Average success rate: 62.0% - below target
+   - Operational Status: CRITICAL
+   - This is separate from usage trends but indicates service quality issues
+
+3. **However, Positive Indicators:**
+   - Overall trend still positive (71.5% growth since May)
+   - 0 consecutive monthly declines
    - August volume still higher than May/June
+   - 3-month trend: +17.0% (last 3 months vs previous 3)
+   - Decline concentrated in archived workflows (may be intentional)
 
-3. **Uncertainty:**
+4. **Uncertainty:**
    - Is this a temporary dip or the start of a decline?
-   - Could be seasonal variation
+   - Could be seasonal variation or workflow archiving
+   - Operational health issues may be affecting customer satisfaction
    - Need next month's data to confirm direction
+   - Need to investigate operational health issues (low success rate)
 
 ---
 
@@ -910,19 +922,25 @@ Using industry-standard customer success metrics to assess customer health:
 **Scenario 2 - Customer Health:**
 
 **What the Data Shows:**
-- Strong overall growth trend (62.5% from May to August)
-- Single month decline in August (18.8%)
+- Strong overall growth trend (71.5% from May to August)
+- Single month decline in August (16.5%) - exceeds 15% risk threshold
 - Decline concentrated in archived workflows
-- Service quality remains high (success rate >90%)
+- Operational health: CRITICAL (success rate 75.0% latest, 62.0% average - below 80% threshold)
 - Comprehensive trend analysis reveals workflow lifecycle patterns, run duration trends, daily/weekly cycles
-- Real-world metrics: Churn risk, engagement, growth velocity, operational health, usage concentration, platform maturity
+- Real-world metrics show:
+  - Churn Risk: MEDIUM (0 consecutive declines, -16.5% latest MoM)
+  - Growth Velocity: DECELERATING (-16.5% recent, +71.5% overall)
+  - Engagement: 17 active workflows, 242.9% utilization, 0.719 diversity index
+  - Usage Concentration: MEDIUM risk (41.0% top workflow, 87.5% top 3)
+  - Platform Maturity: MATURE (130 days avg age, 0 new, 6 established)
 
 **What This Means:**
-- Overall usage trend is positive
-- August decline may be related to intentional workflow archiving
+- Overall usage trend is positive (71.5% growth)
+- August decline exceeds risk threshold but may be related to intentional workflow archiving
+- Operational health is CRITICAL - success rate below 80% threshold requires attention
 - Customer health metrics provide actionable insights for customer success team
-- Risk level assessment based on comprehensive metrics
-- Further monitoring needed to determine if trend continues
+- Risk level: MEDIUM - requires monitoring and proactive engagement
+- Further monitoring needed to determine if trend continues or stabilizes
 
 ---
 
@@ -953,23 +971,29 @@ Using industry-standard customer success metrics to assess customer health:
 **Scenario 2 - What We Know:**
 
 1. **The Facts:**
-   - Strong overall growth trend (62.5% from May to August)
-   - Single month decline in August (18.8%)
+   - Strong overall growth trend (71.5% from May to August)
+   - Single month decline in August (16.5%) - exceeds 15% risk threshold
    - Decline concentrated in archived workflows
-   - Service quality remains high (success rate >90%)
+   - Operational health: CRITICAL (success rate 75.0% latest, 62.0% average - below 80% threshold)
    - Comprehensive trend analysis reveals:
      - Workflow creation patterns over time
      - Run duration trends
      - Daily usage volatility and patterns
      - Weekly operational cycles
-   - Real-world metrics: Churn risk, engagement, growth velocity, operational health, usage concentration, platform maturity
+   - Real-world metrics show:
+     - Churn Risk: MEDIUM (0 consecutive declines, -16.5% latest MoM)
+     - Growth Velocity: DECELERATING (-16.5% recent, +71.5% overall)
+     - Engagement: 17 active workflows, 242.9% utilization, 0.719 diversity index
+     - Usage Concentration: MEDIUM risk (41.0% top workflow, 87.5% top 3)
+     - Platform Maturity: MATURE (130 days avg age, 0 new, 6 established)
 
 2. **What This Tells Us:**
-   - Overall usage trend is positive
-   - August decline may be related to intentional workflow archiving
+   - Overall usage trend is positive (71.5% growth)
+   - August decline exceeds risk threshold but may be related to intentional workflow archiving
+   - Operational health is CRITICAL - success rate below 80% threshold requires immediate attention
    - Customer health metrics provide actionable insights for customer success team
-   - Risk level assessment based on comprehensive metrics
-   - Need more data to determine if trend continues
+   - Risk level: MEDIUM - requires monitoring and proactive engagement
+   - Need more data to determine if trend continues or if operational issues are affecting usage
 
 ---
 
