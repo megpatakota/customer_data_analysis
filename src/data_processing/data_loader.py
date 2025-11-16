@@ -139,3 +139,27 @@ def get_billable_data():
     ]
 
     return df_billable
+
+def get_usage_data():
+    """
+    Creates a subset of USAGE data (Scenario 2) from the main datasets.
+
+    Usage samples must meet two criteria:
+    1. LIVE environment only
+    2. OUTCOME = 'finished' only
+    
+    It intentionally INCLUDES all QC_CHECK statuses (pass, fail, null)
+    and all SAMPLE_TYPEs, as this represents all processing activity.
+
+    Returns:
+        DataFrame of usage samples meeting the criteria
+    """
+    df_usage = final_merge()
+
+    # Filter for Scenario 2: Usage
+    df_usage = df_usage[
+        (df_usage["ENVIRONMENT_runs"] == "live")
+        & (df_usage["OUTCOME"] == "finished")
+    ]
+
+    return df_usage

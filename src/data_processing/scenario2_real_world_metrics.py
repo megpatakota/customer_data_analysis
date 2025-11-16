@@ -100,7 +100,9 @@ def calculate_customer_health_metrics(usage_live, df_runs, df_wfs):
     
     # 4. OPERATIONAL HEALTH
     success_monthly = runs_live.groupby("YEAR_MONTH").agg(
-        TOTAL_RUNS=("ID", "count"),
+        # NOTE: df_runs (from data_loader) uses RUN_ID as the run identifier, not ID.
+        # Align to that schema here so Scenario 2 metrics work with the same dataset setup.
+        TOTAL_RUNS=("RUN_ID", "count"),
         FINISHED=("OUTCOME", lambda x: (x == "finished").sum()),
         FAILED=("OUTCOME", lambda x: (x == "failed").sum()),
         CANCELED=("OUTCOME", lambda x: (x == "canceled").sum())

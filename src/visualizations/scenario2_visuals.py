@@ -12,9 +12,10 @@ from matplotlib.patches import Rectangle
 from ..utils.config import COLORS
 
 
-def visual1_usage_trend(usage_live):
+def visual1_usage_trend(df_runs):
     """
     Visual 1: Customer Usage Trend Over Time
+    Runs determine the usage.
     
     Shows monthly processing samples with trend line (all samples in LIVE runs).
     Highlights significant drops that exceed risk threshold.
@@ -25,11 +26,11 @@ def visual1_usage_trend(usage_live):
     - Provides context for month-over-month changes
     - Uses all samples (not just pass QC) to reflect actual customer usage
     """
-    usage_live_s2 = usage_live.copy()
-    usage_live_s2["YEAR_MONTH"] = usage_live_s2["TIMESTAMP"].dt.to_period("M")
+    df_runs_s2 = df_runs.copy()
+    df_runs_s2["YEAR_MONTH"] = df_runs_s2["TIMESTAMP"].dt.to_period("M")
     
     usage_monthly = (
-        usage_live_s2.groupby("YEAR_MONTH").agg(
+        df_runs_s2.groupby("YEAR_MONTH").agg(
             SAMPLES_PROCESSED=("RUN_ID", "count"),
             UNIQUE_RUNS=("RUN_ID", "nunique"),
         ).sort_index()
@@ -96,7 +97,7 @@ def visual1_usage_trend(usage_live):
     plt.show()
 
 
-def visual2_mom_growth(usage_live):
+def visual2_mom_growth(df_runs):
     """
     Visual 2: Month-over-Month Growth Rate
     
@@ -109,11 +110,11 @@ def visual2_mom_growth(usage_live):
     - Complements the trend chart by showing rate of change
     - Uses all samples (not just pass QC) to reflect actual customer usage
     """
-    usage_live_s2 = usage_live.copy()
-    usage_live_s2["YEAR_MONTH"] = usage_live_s2["TIMESTAMP"].dt.to_period("M")
+    df_runs_s2 = df_runs.copy()
+    df_runs_s2["YEAR_MONTH"] = df_runs_s2["TIMESTAMP"].dt.to_period("M")
     
     usage_monthly = (
-        usage_live_s2.groupby("YEAR_MONTH").agg(
+        df_runs_s2.groupby("YEAR_MONTH").agg(
             SAMPLES_PROCESSED=("RUN_ID", "count"),
         ).sort_index()
     )
@@ -192,7 +193,8 @@ def visual3_success_rate(df_runs):
     runs_live["YEAR_MONTH"] = runs_live["START_TIME"].dt.to_period("M")
     
     success_monthly = runs_live.groupby("YEAR_MONTH").agg(
-        TOTAL_RUNS=("ID", "count"),
+        # df_runs (from data_loader) uses RUN_ID as the run identifier, not ID
+        TOTAL_RUNS=("RUN_ID", "count"),
         FINISHED=("OUTCOME", lambda s: (s == "finished").sum()),
         FAILED=("OUTCOME", lambda s: (s == "failed").sum()),
         CANCELED=("OUTCOME", lambda s: (s == "canceled").sum())
@@ -242,7 +244,7 @@ def visual3_success_rate(df_runs):
     plt.show()
 
 
-def visual4_health_summary(usage_live, df_runs):
+def visual4_health_summary(df_runs, df_runs):
     """
     Visual 4: Customer Health Summary
     
@@ -256,11 +258,11 @@ def visual4_health_summary(usage_live, df_runs):
     - Uses all samples (not just pass QC) to reflect actual customer usage
     """
     # Calculate metrics
-    usage_live_s2 = usage_live.copy()
-    usage_live_s2["YEAR_MONTH"] = usage_live_s2["TIMESTAMP"].dt.to_period("M")
+    df_runs_s2 = df_runs.copy()
+    df_runs_s2["YEAR_MONTH"] = df_runs_s2["TIMESTAMP"].dt.to_period("M")
     
     usage_monthly = (
-        usage_live_s2.groupby("YEAR_MONTH").agg(
+        df_runs_s2.groupby("YEAR_MONTH").agg(
             SAMPLES_PROCESSED=("RUN_ID", "count"),
         ).sort_index()
     )
@@ -269,7 +271,8 @@ def visual4_health_summary(usage_live, df_runs):
     runs_live = df_runs[df_runs["ENVIRONMENT"] == "live"].copy()
     runs_live["YEAR_MONTH"] = runs_live["START_TIME"].dt.to_period("M")
     success_monthly = runs_live.groupby("YEAR_MONTH").agg(
-        TOTAL_RUNS=("ID", "count"),
+        # df_runs (from data_loader) uses RUN_ID as the run identifier, not ID
+        TOTAL_RUNS=("RUN_ID", "count"),
         FINISHED=("OUTCOME", lambda s: (s == "finished").sum()),
     )
     success_monthly["SUCCESS_RATE"] = (success_monthly["FINISHED"] / success_monthly["TOTAL_RUNS"] * 100)

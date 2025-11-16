@@ -25,9 +25,6 @@ def visual5_workflow_creation_trends(df_wfs, df_runs):
     """
     wfs_live = df_wfs[df_wfs['ENVIRONMENT'] == 'live'].copy()
     
-    if wfs_live.empty:
-        print("No LIVE workflows found.")
-        return
     
     wfs_live['DATE'] = wfs_live['WORKFLOW_TIMESTAMP'].dt.date
     daily_workflows = wfs_live.groupby('DATE').size().reset_index(name='WORKFLOWS_CREATED')
@@ -86,7 +83,7 @@ def visual6_run_duration_analysis(df_runs):
     daily_durations = runs_finished.groupby('DATE').agg(
         AVG_DURATION=('DURATION_HOURS', 'mean'),
         MEDIAN_DURATION=('DURATION_HOURS', 'median'),
-        COUNT=('ID', 'count')
+        COUNT=('RUN_ID', 'count')
     ).reset_index()
     daily_durations['DATE'] = pd.to_datetime(daily_durations['DATE'])
     

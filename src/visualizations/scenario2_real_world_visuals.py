@@ -9,7 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from ..utils.config import COLORS
-
+from src.data_processing.data_loader import get_billable_data
+billable_live = get_billable_data()
 
 def visual9_customer_health_dashboard(health_metrics):
     """
@@ -147,14 +148,13 @@ def visual9_customer_health_dashboard(health_metrics):
     plt.show()
 
 
-def visual10_churn_risk_timeline(usage_live, health_metrics):
+def visual10_churn_risk_timeline(health_metrics):
     """
     Visual 10: Churn Risk Timeline
     
     Shows usage trends with churn risk indicators.
     """
-    usage_live_copy = usage_live.copy()
-    usage_live_copy["YEAR_MONTH"] = usage_live_copy["TIMESTAMP"].dt.to_period("M")
+    usage_live_copy = billable_live
     
     monthly = usage_live_copy.groupby("YEAR_MONTH").agg(
         SAMPLES=("RUN_ID", "count")
